@@ -106,3 +106,22 @@ export interface ColumnInfo {
   is_nullable: string
   column_default: string | null
 }
+
+// =============================================================================
+// VOLUNTEER TYPES
+// =============================================================================
+
+export type VolunteerStatus = 'new_member' | 'member' | 'alumni' | 'parachute'
+
+export interface Volunteer {
+  id: string
+  name: string | null
+  email: string | null
+  phone: string | null
+  photo_url: string | null
+  status: VolunteerStatus
+  join_semester: string | null
+  contacts: Record<string, string>
+  created_at: string
+  updated_at: string
+}

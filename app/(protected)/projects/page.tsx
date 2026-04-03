@@ -15,16 +15,12 @@ export default async function ProjectsPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-slate-900">Projetos</h1>
-        <p className="text-sm text-slate-500 mt-1">
-          Gerir todos os projetos ESN registados no Supabase
+        <h1 className="text-2xl font-bold">Projects</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Manage all ESN projects registered in Supabase
         </p>
       </div>
-
-      <ProjectsTable
-        initialProjects={(projects || []) as Project[]}
-        isAdmin={isAdmin}
-      />
+      <ProjectsTable initialProjects={(projects || []) as Project[]} isAdmin={isAdmin} />
     </div>
   )
 }

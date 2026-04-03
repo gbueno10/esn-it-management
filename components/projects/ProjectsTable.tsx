@@ -2,13 +2,18 @@
 
 import { useState } from 'react'
 import { Project, CreateProjectInput, UpdateProjectInput } from '@/types'
-import { Button } from '@/components/ui/Button'
-import { AccessLevelBadge } from '@/components/ui/Badge'
-import { Modal } from '@/components/ui/Modal'
-import { Input, Textarea } from '@/components/ui/Input'
-import { Select } from '@/components/ui/Select'
-import { EmptyState } from '@/components/ui/EmptyState'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
+import { Card } from '@/components/ui/card'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogClose, DialogDescription, DialogHeader, DialogFooter } from '@/components/ui/dialog'
+import { AccessLevelBadge } from '@/components/ui/role-badges'
+import { EmptyState } from '@/components/ui/empty-state'
 import { formatRelativeTime } from '@/lib/utils'
+import { Plus, Pencil, FolderKanban } from 'lucide-react'
 
 interface ProjectsTableProps {
   initialProjects: Project[]
@@ -24,11 +29,8 @@ const accessLevelOptions = [
 
 export function ProjectsTable({ initialProjects, isAdmin }: ProjectsTableProps) {
   const [projects, setProjects] = useState(initialProjects)
-  const [showCreate, setShowCreate] = useState(false)
-  const [editProject, setEditProject] = useState<Project | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
   const [filter, setFilter] = useState<string>('all')
+  const [error, setError] = useState('')
 
   const filtered = filter === 'all'
     ? projects
@@ -39,43 +41,29 @@ export function ProjectsTable({ initialProjects, isAdmin }: ProjectsTableProps) 
         : projects.filter((p) => p.access_level === filter)
 
   async function handleCreate(input: CreateProjectInput) {
-    setLoading(true)
     setError('')
-    try {
-      const res = await fetch('/api/projects', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(input),
-      })
-      const json = await res.json()
-      if (!res.ok) throw new Error(json.error)
-      setProjects([json.data, ...projects])
-      setShowCreate(false)
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to create project')
-    } finally {
-      setLoading(false)
-    }
+    const res = await fetch('/api/projects', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(input),
+    })
+    const json = await res.json()
+    if (!res.ok) { setError(json.error); return false }
+    setProjects([json.data, ...projects])
+    return true
   }
 
   async function handleUpdate(slug: string, input: UpdateProjectInput) {
-    setLoading(true)
     setError('')
-    try {
-      const res = await fetch(`/api/projects/${slug}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(input),
-      })
-      const json = await res.json()
-      if (!res.ok) throw new Error(json.error)
-      setProjects(projects.map((p) => (p.slug === slug ? json.data : p)))
-      setEditProject(null)
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to update project')
-    } finally {
-      setLoading(false)
-    }
+    const res = await fetch(`/api/projects/${slug}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(input),
+    })
+    const json = await res.json()
+    if (!res.ok) { setError(json.error); return false }
+    setProjects(projects.map((p) => (p.slug === slug ? json.data : p)))
+    return true
   }
 
   async function handleToggleActive(project: Project) {
@@ -90,238 +78,182 @@ export function ProjectsTable({ initialProjects, isAdmin }: ProjectsTableProps) 
           <select
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            className="text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white"
+            className="text-sm border rounded-lg px-3 py-2 bg-card"
           >
-            <option value="all">Todos</option>
-            <option value="active">Ativos</option>
-            <option value="inactive">Inativos</option>
+            <option value="all">All</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
             <option value="public">Public</option>
             <option value="staff_only">Staff Only</option>
             <option value="admin_only">Admin Only</option>
             <option value="custom">Custom</option>
           </select>
-          <span className="text-sm text-slate-500">{filtered.length} projetos</span>
+          <span className="text-sm text-muted-foreground">{filtered.length} projects</span>
         </div>
         {isAdmin && (
-          <Button onClick={() => setShowCreate(true)}>
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Novo Projeto
-          </Button>
+          <ProjectFormDialog onSubmit={handleCreate} title="New Project">
+            <Button>
+              <Plus className="h-4 w-4 mr-1" />
+              New Project
+            </Button>
+          </ProjectFormDialog>
         )}
       </div>
 
       {error && (
-        <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded-lg">{error}</div>
+        <div className="mb-4 p-3 bg-destructive/10 text-destructive text-sm rounded-lg">{error}</div>
       )}
 
-      {/* Table */}
       {filtered.length === 0 ? (
         <EmptyState
-          title="Nenhum projeto encontrado"
-          description="Cria o primeiro projeto para começar."
-          icon={
-            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-            </svg>
-          }
+          title="No projects found"
+          description="Create your first project to get started."
+          icon={<FolderKanban className="h-8 w-8" />}
         />
       ) : (
-        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-100 bg-slate-50/50">
-                  <th className="text-left font-medium text-slate-500 px-4 py-3">Projeto</th>
-                  <th className="text-left font-medium text-slate-500 px-4 py-3">Slug</th>
-                  <th className="text-left font-medium text-slate-500 px-4 py-3">Acesso</th>
-                  <th className="text-left font-medium text-slate-500 px-4 py-3">Status</th>
-                  <th className="text-left font-medium text-slate-500 px-4 py-3">Signup</th>
-                  <th className="text-left font-medium text-slate-500 px-4 py-3">Criado</th>
-                  {isAdmin && (
-                    <th className="text-right font-medium text-slate-500 px-4 py-3">Ações</th>
-                  )}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filtered.map((project) => (
-                  <tr key={project.slug} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="px-4 py-3">
-                      <div>
-                        <span className="font-medium text-slate-900">{project.name}</span>
-                        {project.description && (
-                          <p className="text-xs text-slate-400 mt-0.5 truncate max-w-xs">
-                            {project.description}
-                          </p>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <code className="text-xs bg-slate-100 px-2 py-0.5 rounded text-slate-600">
-                        {project.slug}
-                      </code>
-                    </td>
-                    <td className="px-4 py-3">
-                      <AccessLevelBadge level={project.access_level} />
-                    </td>
-                    <td className="px-4 py-3">
-                      {isAdmin ? (
-                        <button
-                          onClick={() => handleToggleActive(project)}
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold transition-colors ${
-                            project.is_active
-                              ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                              : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
-                          }`}
-                        >
-                          <span className={`w-1.5 h-1.5 rounded-full ${project.is_active ? 'bg-green-500' : 'bg-slate-400'}`} />
-                          {project.is_active ? 'Ativo' : 'Inativo'}
-                        </button>
-                      ) : (
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                          project.is_active ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'
-                        }`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${project.is_active ? 'bg-green-500' : 'bg-slate-400'}`} />
-                          {project.is_active ? 'Ativo' : 'Inativo'}
-                        </span>
+        <Card>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Project</TableHead>
+                <TableHead>Slug</TableHead>
+                <TableHead>Access</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Signup</TableHead>
+                <TableHead>Created</TableHead>
+                {isAdmin && <TableHead className="text-right">Actions</TableHead>}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filtered.map((project) => (
+                <TableRow key={project.slug}>
+                  <TableCell>
+                    <div>
+                      <span className="font-medium">{project.name}</span>
+                      {project.description && (
+                        <p className="text-xs text-muted-foreground mt-0.5 truncate max-w-xs">{project.description}</p>
                       )}
-                    </td>
-                    <td className="px-4 py-3 text-slate-500">
-                      {project.allow_signup ? 'Sim' : 'Não'}
-                    </td>
-                    <td className="px-4 py-3 text-slate-400 text-xs">
-                      {formatRelativeTime(project.created_at)}
-                    </td>
-                    {isAdmin && (
-                      <td className="px-4 py-3 text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setEditProject(project)}
-                        >
-                          Editar
-                        </Button>
-                      </td>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <code className="text-xs bg-muted px-2 py-0.5 rounded">{project.slug}</code>
+                  </TableCell>
+                  <TableCell><AccessLevelBadge level={project.access_level} /></TableCell>
+                  <TableCell>
+                    {isAdmin ? (
+                      <button
+                        onClick={() => handleToggleActive(project)}
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold transition-colors ${
+                          project.is_active ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                        }`}
+                      >
+                        <span className={`w-1.5 h-1.5 rounded-full ${project.is_active ? 'bg-green-500' : 'bg-muted-foreground/50'}`} />
+                        {project.is_active ? 'Active' : 'Inactive'}
+                      </button>
+                    ) : (
+                      <Badge variant={project.is_active ? 'default' : 'secondary'}>
+                        {project.is_active ? 'Active' : 'Inactive'}
+                      </Badge>
                     )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* Create Modal */}
-      <ProjectFormModal
-        open={showCreate}
-        onClose={() => { setShowCreate(false); setError('') }}
-        onSubmit={handleCreate}
-        loading={loading}
-        title="Novo Projeto"
-      />
-
-      {/* Edit Modal */}
-      {editProject && (
-        <ProjectFormModal
-          open={true}
-          onClose={() => { setEditProject(null); setError('') }}
-          onSubmit={(input) => handleUpdate(editProject.slug, input)}
-          loading={loading}
-          title={`Editar: ${editProject.name}`}
-          initial={editProject}
-        />
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">{project.allow_signup ? 'Yes' : 'No'}</TableCell>
+                  <TableCell className="text-muted-foreground text-xs">{formatRelativeTime(project.created_at)}</TableCell>
+                  {isAdmin && (
+                    <TableCell className="text-right">
+                      <ProjectFormDialog onSubmit={(input) => handleUpdate(project.slug, input)} title={`Edit: ${project.name}`} initial={project}>
+                        <Button variant="ghost" size="sm">
+                          <Pencil className="h-3 w-3 mr-1" />
+                          Edit
+                        </Button>
+                      </ProjectFormDialog>
+                    </TableCell>
+                  )}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Card>
       )}
     </div>
   )
 }
 
-function ProjectFormModal({
-  open,
-  onClose,
+function ProjectFormDialog({
   onSubmit,
-  loading,
   title,
   initial,
+  children,
 }: {
-  open: boolean
-  onClose: () => void
-  onSubmit: (input: CreateProjectInput & UpdateProjectInput) => void
-  loading: boolean
+  onSubmit: (input: CreateProjectInput & UpdateProjectInput) => Promise<boolean>
   title: string
   initial?: Project
+  children: React.ReactNode
 }) {
+  const [open, setOpen] = useState(false)
   const [slug, setSlug] = useState(initial?.slug || '')
   const [name, setName] = useState(initial?.name || '')
   const [description, setDescription] = useState(initial?.description || '')
   const [accessLevel, setAccessLevel] = useState<string>(initial?.access_level || 'staff_only')
   const [allowSignup, setAllowSignup] = useState(initial?.allow_signup ?? false)
+  const [loading, setLoading] = useState(false)
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    onSubmit({
+    setLoading(true)
+    const success = await onSubmit({
       slug,
       name,
       description: description || undefined,
       access_level: accessLevel as CreateProjectInput['access_level'],
       allow_signup: allowSignup,
     })
+    setLoading(false)
+    if (success) setOpen(false)
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={title}>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {!initial && (
-          <Input
-            id="slug"
-            label="Slug"
-            placeholder="meu_projeto"
-            value={slug}
-            onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
-            required
-          />
-        )}
-        <Input
-          id="name"
-          label="Nome"
-          placeholder="Meu Projeto"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-        />
-        <Textarea
-          id="description"
-          label="Descrição"
-          placeholder="Descrição do projeto..."
-          rows={3}
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-        />
-        <Select
-          id="access_level"
-          label="Nível de Acesso"
-          options={accessLevelOptions}
-          value={accessLevel}
-          onChange={(e) => setAccessLevel(e.target.value)}
-        />
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={allowSignup}
-            onChange={(e) => setAllowSignup(e.target.checked)}
-            className="w-4 h-4 rounded border-slate-300 text-[var(--primary)] focus:ring-[var(--primary)]/30"
-          />
-          <span className="text-sm text-slate-700">Permitir signup</span>
-        </label>
-        <div className="flex justify-end gap-3 pt-2">
-          <Button type="button" variant="secondary" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button type="submit" loading={loading}>
-            {initial ? 'Guardar' : 'Criar'}
-          </Button>
-        </div>
-      </form>
-    </Modal>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger render={children as React.ReactElement} />
+      <DialogContent className="sm:max-w-lg">
+          <DialogTitle className="text-lg font-semibold mb-1">{title}</DialogTitle>
+          <DialogDescription className="text-sm text-muted-foreground mb-4">
+            {initial ? 'Update project details.' : 'Register a new ESN project.'}
+          </DialogDescription>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {!initial && (
+              <div className="space-y-1.5">
+                <Label htmlFor="slug">Slug</Label>
+                <Input id="slug" placeholder="my_project" value={slug} onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))} required />
+              </div>
+            )}
+            <div className="space-y-1.5">
+              <Label htmlFor="name">Name</Label>
+              <Input id="name" placeholder="My Project" value={name} onChange={(e) => setName(e.target.value)} required />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="desc">Description</Label>
+              <Textarea id="desc" placeholder="Project description..." rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="access">Access Level</Label>
+              <select id="access" value={accessLevel} onChange={(e) => setAccessLevel(e.target.value)} className="w-full h-8 rounded-lg border px-2.5 text-sm bg-card">
+                {accessLevelOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={allowSignup} onChange={(e) => setAllowSignup(e.target.checked)} className="w-4 h-4 rounded border-input" />
+              <span className="text-sm">Allow signup</span>
+            </label>
+            <div className="flex justify-end gap-3 pt-2">
+              <DialogClose>
+                <Button variant="outline" type="button">Cancel</Button>
+              </DialogClose>
+              <Button type="submit" disabled={loading}>
+                {loading ? 'Saving...' : initial ? 'Save' : 'Create'}
+              </Button>
+            </div>
+          </form>
+      </DialogContent>
+    </Dialog>
   )
 }

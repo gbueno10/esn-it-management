@@ -30,11 +30,6 @@ Supabase Self-Hosted Instance
 │   ├── email_runs
 │   ├── email_logs
 │   └── eventupp_students
-│
-└── asset_management (schema) - Asset Management App
-    ├── assets
-    ├── profiles
-    └── movement_logs
 ```
 
 ## Access Control System
@@ -51,7 +46,6 @@ SELECT * FROM public.projects;
 | esn_app          | ESN App          | public       | true         |
 | speed_dating     | Speed Dating     | public       | true         |
 | email_sender     | Email Sender     | staff_only   | false        |
-| asset_management | Asset Management | staff_only   | false        |
 ```
 
 ### 2. Access Levels

@@ -2,7 +2,12 @@
 
 import { useState } from 'react'
 import { SchemaInfo, TableInfo } from '@/types'
-import { EmptyState } from '@/components/ui/EmptyState'
+import { Card, CardContent } from '@/components/ui/card'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Badge } from '@/components/ui/badge'
+import { EmptyState } from '@/components/ui/empty-state'
+import { Database, ChevronDown, Loader2, TableIcon } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 interface SchemaExplorerProps {
   schemas: SchemaInfo[]
@@ -20,7 +25,6 @@ export function SchemaExplorer({ schemas, projectSlugs }: SchemaExplorerProps) {
       setTables([])
       return
     }
-
     setExpandedSchema(schemaName)
     setLoadingTables(true)
     try {
@@ -40,13 +44,9 @@ export function SchemaExplorer({ schemas, projectSlugs }: SchemaExplorerProps) {
   if (schemas.length === 0) {
     return (
       <EmptyState
-        title="Nenhum schema encontrado"
-        description="Não foi possível carregar os schemas. Verifica se a database function existe."
-        icon={
-          <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
-          </svg>
-        }
+        title="No schemas found"
+        description="Could not load schemas. Check if the database function exists."
+        icon={<Database className="h-8 w-8" />}
       />
     )
   }
@@ -58,121 +58,90 @@ export function SchemaExplorer({ schemas, projectSlugs }: SchemaExplorerProps) {
         const isExpanded = expandedSchema === schema.schema_name
 
         return (
-          <div
-            key={schema.schema_name}
-            className="bg-white rounded-xl border border-slate-200 overflow-hidden"
-          >
-            {/* Schema Header */}
+          <Card key={schema.schema_name}>
             <button
               onClick={() => toggleSchema(schema.schema_name)}
-              className="w-full flex items-center justify-between px-5 py-4 hover:bg-slate-50/50 transition-colors text-left"
+              className="w-full flex items-center justify-between px-5 py-4 hover:bg-muted/50 transition-colors text-left rounded-xl"
             >
               <div className="flex items-center gap-3">
-                <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${
-                  schema.schema_name === 'public'
-                    ? 'bg-[var(--primary)]/10'
-                    : isProject
-                      ? 'bg-[var(--accent)]/10'
-                      : 'bg-slate-100'
-                }`}>
-                  <svg className={`w-5 h-5 ${
-                    schema.schema_name === 'public'
-                      ? 'text-[var(--primary)]'
-                      : isProject
-                        ? 'text-[var(--accent)]'
-                        : 'text-slate-400'
-                  }`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
-                  </svg>
+                <div className={cn(
+                  'w-9 h-9 rounded-lg flex items-center justify-center',
+                  schema.schema_name === 'public' ? 'bg-primary/10' : isProject ? 'bg-green-100' : 'bg-muted'
+                )}>
+                  <Database className={cn(
+                    'h-5 w-5',
+                    schema.schema_name === 'public' ? 'text-primary' : isProject ? 'text-green-600' : 'text-muted-foreground'
+                  )} />
                 </div>
-                <div>
-                  <span className="font-semibold text-slate-900">{schema.schema_name}</span>
-                  {isProject && (
-                    <span className="ml-2 text-xs text-[var(--accent)] font-medium">Projeto</span>
-                  )}
-                  {schema.schema_name === 'public' && (
-                    <span className="ml-2 text-xs text-[var(--primary)] font-medium">Partilhado</span>
-                  )}
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold">{schema.schema_name}</span>
+                  {isProject && <Badge variant="secondary">Project</Badge>}
+                  {schema.schema_name === 'public' && <Badge variant="default">Shared</Badge>}
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 {schema.table_count > 0 && (
-                  <span className="text-xs text-slate-400">{schema.table_count} tabelas</span>
+                  <span className="text-xs text-muted-foreground">{schema.table_count} tables</span>
                 )}
-                <svg
-                  className={`w-5 h-5 text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
+                <ChevronDown className={cn('h-4 w-4 text-muted-foreground transition-transform', isExpanded && 'rotate-180')} />
               </div>
             </button>
 
-            {/* Tables */}
             {isExpanded && (
-              <div className="border-t border-slate-100 px-5 py-4">
+              <CardContent className="pt-0 pb-4">
                 {loadingTables ? (
-                  <div className="flex items-center gap-2 text-sm text-slate-400 py-4">
-                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    A carregar tabelas...
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Loading tables...
                   </div>
                 ) : tables.length === 0 ? (
-                  <p className="text-sm text-slate-400 py-2">
-                    Nenhuma tabela encontrada ou a database function não existe.
+                  <p className="text-sm text-muted-foreground py-2">
+                    No tables found or the database function doesn&apos;t exist.
                   </p>
                 ) : (
                   <div className="space-y-4">
                     {tables.map((table) => (
                       <div key={table.table_name}>
-                        <h4 className="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                          <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                          </svg>
+                        <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                          <TableIcon className="h-4 w-4 text-muted-foreground" />
                           {table.table_name}
-                          <span className="text-xs text-slate-400 font-normal">
-                            ({table.columns.length} colunas)
-                          </span>
+                          <span className="text-xs text-muted-foreground font-normal">({table.columns.length} columns)</span>
                         </h4>
-                        <div className="bg-slate-50 rounded-lg overflow-hidden">
-                          <table className="w-full text-xs">
-                            <thead>
-                              <tr className="border-b border-slate-200">
-                                <th className="text-left font-medium text-slate-500 px-3 py-2">Coluna</th>
-                                <th className="text-left font-medium text-slate-500 px-3 py-2">Tipo</th>
-                                <th className="text-left font-medium text-slate-500 px-3 py-2">Nullable</th>
-                                <th className="text-left font-medium text-slate-500 px-3 py-2">Default</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100">
+                        <div className="bg-muted/50 rounded-lg overflow-hidden">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead className="text-xs">Column</TableHead>
+                                <TableHead className="text-xs">Type</TableHead>
+                                <TableHead className="text-xs">Nullable</TableHead>
+                                <TableHead className="text-xs">Default</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
                               {table.columns.map((col) => (
-                                <tr key={col.column_name}>
-                                  <td className="px-3 py-1.5 font-mono text-slate-900">{col.column_name}</td>
-                                  <td className="px-3 py-1.5 text-slate-600">{col.data_type}</td>
-                                  <td className="px-3 py-1.5">
-                                    <span className={col.is_nullable === 'YES' ? 'text-slate-400' : 'text-slate-700 font-medium'}>
-                                      {col.is_nullable === 'YES' ? 'sim' : 'NOT NULL'}
+                                <TableRow key={col.column_name}>
+                                  <TableCell className="font-mono text-xs py-1.5">{col.column_name}</TableCell>
+                                  <TableCell className="text-xs py-1.5">{col.data_type}</TableCell>
+                                  <TableCell className="text-xs py-1.5">
+                                    <span className={col.is_nullable === 'YES' ? 'text-muted-foreground' : 'font-medium'}>
+                                      {col.is_nullable === 'YES' ? 'yes' : 'NOT NULL'}
                                     </span>
-                                  </td>
-                                  <td className="px-3 py-1.5 text-slate-400 font-mono truncate max-w-[200px]">
+                                  </TableCell>
+                                  <TableCell className="text-xs py-1.5 font-mono text-muted-foreground truncate max-w-[200px]">
                                     {col.column_default || '-'}
-                                  </td>
-                                </tr>
+                                  </TableCell>
+                                </TableRow>
                               ))}
-                            </tbody>
-                          </table>
+                            </TableBody>
+                          </Table>
                         </div>
                       </div>
                     ))}
                   </div>
                 )}
-              </div>
+              </CardContent>
             )}
-          </div>
+          </Card>
         )
       })}
     </div>
