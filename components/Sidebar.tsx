@@ -55,7 +55,7 @@ export function Sidebar({ userEmail, isAdmin, userRole }: SidebarProps) {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed top-0 left-0 z-50 h-full w-64 bg-card border-r flex flex-col transition-transform duration-200',
+          'fixed top-0 left-0 z-50 h-full w-64 bg-card border-r shadow-sm flex flex-col transition-transform duration-200',
           'lg:translate-x-0 lg:static lg:z-auto',
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         )}
@@ -104,7 +104,7 @@ export function Sidebar({ userEmail, isAdmin, userRole }: SidebarProps) {
               <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)}
                 className={cn(
                   'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
-                  isActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  isActive ? 'bg-primary/10 text-primary font-semibold' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                 )}
               >
                 <Icon className="h-4 w-4" />
@@ -125,7 +125,7 @@ export function Sidebar({ userEmail, isAdmin, userRole }: SidebarProps) {
               <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)}
                 className={cn(
                   'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
-                  isActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  isActive ? 'bg-primary/10 text-primary font-semibold' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                 )}
               >
                 <Icon className="h-4 w-4" />

@@ -5,6 +5,7 @@ This guide explains how to create a new standalone app using the shared Supabase
 ## Prerequisites
 
 - Access to the Supabase instance
+- SSH access to the server (for PostgREST config)
 - Node.js 18+ installed
 - pnpm/npm/yarn installed
 
@@ -68,21 +69,63 @@ VALUES (
 -- 2. Create schema
 CREATE SCHEMA IF NOT EXISTS my_new_app;
 
--- 3. Grant permissions (adjust based on access_level)
-
--- For staff_only apps:
-GRANT USAGE ON SCHEMA my_new_app TO authenticated, service_role;
-GRANT ALL ON ALL TABLES IN SCHEMA my_new_app TO authenticated, service_role;
-GRANT ALL ON ALL SEQUENCES IN SCHEMA my_new_app TO authenticated, service_role;
+-- 3. Grant permissions to all Supabase roles
+GRANT USAGE ON SCHEMA my_new_app TO authenticator, anon, authenticated, service_role;
+GRANT ALL ON ALL TABLES IN SCHEMA my_new_app TO authenticator, anon, authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA my_new_app TO authenticator, anon, authenticated, service_role;
 ALTER DEFAULT PRIVILEGES IN SCHEMA my_new_app
-  GRANT ALL ON TABLES TO authenticated, service_role;
-
--- For public apps (also grant to anon):
--- GRANT USAGE ON SCHEMA my_new_app TO anon, authenticated, service_role;
--- GRANT ALL ON ALL TABLES IN SCHEMA my_new_app TO anon, authenticated, service_role;
+  GRANT ALL ON TABLES TO authenticator, anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA my_new_app
+  GRANT ALL ON SEQUENCES TO authenticator, anon, authenticated, service_role;
 ```
 
-## Step 5: Create Your Tables
+> **Important:** You MUST include `authenticator` in the grants. This is the role PostgREST uses to connect to the database.
+
+## Step 5: Expose the Schema in PostgREST (CRITICAL)
+
+PostgREST only serves schemas that are explicitly listed in its config. Without this step, **all API queries to your schema will fail with `PGRST106 Invalid schema`**.
+
+Our Supabase instance uses `PGRST_DB_USE_LEGACY_GUCS=false`, which means PostgREST reads the schema list from the **`authenticator` database role**, NOT from the `PGRST_DB_SCHEMAS` environment variable.
+
+### How to add your schema
+
+SSH into the server and run this SQL on the database:
+
+```bash
+ssh -i ~/.ssh/id_rsa_n8n root@72.60.95.145
+docker exec supabase-db psql -U supabase_admin -d postgres
+```
+
+```sql
+-- 1. Check the current exposed schemas
+SELECT rolconfig FROM pg_roles WHERE rolname = 'authenticator';
+-- You'll see something like: {pgrst.db_schemas=public,storage,...}
+
+-- 2. Add your schema to the list (append it to the existing value)
+ALTER ROLE authenticator SET pgrst.db_schemas TO 'public,storage,graphql_public,asset_management,talent_show,merch,it_manager,my_new_app';
+
+-- 3. Tell PostgREST to reload
+NOTIFY pgrst, 'reload config';
+NOTIFY pgrst, 'reload schema';
+```
+
+### Verify it worked
+
+Check the PostgREST logs:
+
+```bash
+docker logs supabase-rest --tail 5
+```
+
+You should see the Relations count increase. If not, restart PostgREST:
+
+```bash
+cd /opt/supabase && docker compose restart rest
+```
+
+> **Why does this happen?** With `PGRST_DB_USE_LEGACY_GUCS=false`, PostgREST reads config from the `authenticator` role's `SET` parameters in PostgreSQL, ignoring the `PGRST_DB_SCHEMAS` env var in docker-compose. The `.env` file is misleading — the real source of truth is `ALTER ROLE authenticator SET pgrst.db_schemas`.
+
+## Step 6: Create Your Tables
 
 ```sql
 -- Example: User profiles for this app
@@ -116,7 +159,7 @@ CREATE POLICY "Users can create own profile"
   WITH CHECK (auth.uid() = user_id);
 ```
 
-## Step 6: Install Dependencies and Run
+## Step 7: Install Dependencies and Run
 
 ```bash
 # Install dependencies
@@ -126,7 +169,7 @@ pnpm install
 pnpm dev
 ```
 
-## Step 7: Grant Access to Users (if staff_only or custom)
+## Step 8: Grant Access to Users (if staff_only or custom)
 
 For `staff_only` apps, volunteers automatically have access. For `custom` or to grant admin:
 
@@ -232,6 +275,27 @@ export default async function ProtectedLayout({ children }) {
 
 ## Troubleshooting
 
+### "Invalid schema: my_new_app" (PGRST106)
+
+This is the most common issue. It means PostgREST doesn't know about your schema.
+
+**Root cause:** With `PGRST_DB_USE_LEGACY_GUCS=false`, PostgREST reads schemas from the `authenticator` role config, NOT from the `PGRST_DB_SCHEMAS` env var.
+
+**Fix:**
+```sql
+-- Check current config
+SELECT rolconfig FROM pg_roles WHERE rolname = 'authenticator';
+
+-- Add your schema (keep all existing ones!)
+ALTER ROLE authenticator SET pgrst.db_schemas TO 'public,storage,...,my_new_app';
+
+-- Reload
+NOTIFY pgrst, 'reload config';
+NOTIFY pgrst, 'reload schema';
+```
+
+If that doesn't work, restart PostgREST: `docker compose restart rest`
+
 ### "No access to project" error
 - Check that the project is registered in `public.projects`
 - Verify `access_level` matches user's role
@@ -240,9 +304,17 @@ export default async function ProtectedLayout({ children }) {
 ### "Table not found" error
 - Verify `NEXT_PUBLIC_SUPABASE_SCHEMA` matches your schema name
 - Check that the table exists in the correct schema
-- Ensure grants were applied to the schema
+- Ensure grants were applied to the schema (including `authenticator` role!)
 
 ### RLS blocking queries
 - Verify RLS policies are created
 - Check that policies use correct conditions
 - Test with `service_role` key to bypass RLS (debugging only)
+
+### Queries fail silently (return null instead of data)
+- This often means the schema isn't exposed in PostgREST (see PGRST106 fix above)
+- The Supabase client returns `null` data with an error object — always check for errors:
+```typescript
+const { data, error } = await supabase.from('table').select('*')
+if (error) console.error('Query failed:', error.code, error.message)
+```

@@ -4,11 +4,11 @@
 
 :root {
   --background: #F8FAFC;
-  --foreground: #1e293b;
+  --foreground: #0f172a;
   --card: #ffffff;
-  --card-foreground: #1e293b;
+  --card-foreground: #0f172a;
   --popover: #ffffff;
-  --popover-foreground: #1e293b;
+  --popover-foreground: #0f172a;
   --primary: #00AEEF;
   --primary-foreground: #ffffff;
   --secondary: #f1f5f9;
@@ -20,7 +20,7 @@
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
   --border: #e2e8f0;
-  --input: #e2e8f0;
+  --input: #cbd5e1;
   --ring: #00AEEF;
   --radius: 0.625rem;
 
@@ -44,6 +44,28 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Better scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--muted-foreground);
+  border-radius: 999px;
+  opacity: 0.3;
+}
+::-webkit-scrollbar-thumb:hover {
+  opacity: 0.5;
+}
+
 /* ESN gradient utilities */
 .gradient-primary {
   background: linear-gradient(135deg, var(--esn-blue) 0%, var(--esn-pink) 100%);
@@ -54,4 +76,20 @@ body {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+/* Animation utilities */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.4s ease-out;
 }

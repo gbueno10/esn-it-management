@@ -111,7 +111,7 @@ export interface ColumnInfo {
 // VOLUNTEER TYPES
 // =============================================================================
 
-export type VolunteerStatus = 'new_member' | 'member' | 'alumni' | 'parachute'
+export type VolunteerStatus = 'new_member' | 'member' | 'inactive_member' | 'board' | 'alumni' | 'parachute'
 
 export interface Volunteer {
   id: string
@@ -121,6 +121,9 @@ export interface Volunteer {
   photo_url: string | null
   status: VolunteerStatus
   join_semester: string | null
+  birthdate: string | null
+  nationality: string | null
+  country: string | null
   contacts: Record<string, string>
   created_at: string
   updated_at: string

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Inter, Geist } from 'next/font/google'
+import { Toaster } from 'sonner'
 import './globals.css'
 import { cn } from "@/lib/utils";
 
@@ -21,7 +22,18 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={cn("font-sans", geist.variable)}>
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        {children}
+        <Toaster
+          position="bottom-right"
+          richColors
+          toastOptions={{
+            style: {
+              borderRadius: '0.75rem',
+            },
+          }}
+        />
+      </body>
     </html>
   )
 }

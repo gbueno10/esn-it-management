@@ -1,14 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
-import { createClient as createSupa } from '@supabase/supabase-js'
-
-function getItManagerClient() {
-  return createSupa(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { db: { schema: 'it_manager' }, auth: { autoRefreshToken: false, persistSession: false } }
-  )
-}
 
 // GET /api/volunteer/profile - Get current volunteer's profile
 export async function GET() {
@@ -19,8 +10,7 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const itClient = getItManagerClient()
-  const { data, error } = await itClient
+  const { data, error } = await supabase
     .from('volunteers')
     .select('*')
     .eq('id', user.id)
@@ -44,14 +34,13 @@ export async function PATCH(request: Request) {
 
   const body = await request.json()
 
-  const allowed = ['name', 'phone', 'photo_url', 'status', 'join_semester', 'contacts']
+  const allowed = ['name', 'phone', 'photo_url', 'status', 'join_semester', 'birthdate', 'nationality', 'country', 'contacts']
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() }
   for (const key of allowed) {
     if (body[key] !== undefined) updates[key] = body[key]
   }
 
-  const itClient = getItManagerClient()
-  const { data, error } = await itClient
+  const { data, error } = await supabase
     .from('volunteers')
     .update(updates)
     .eq('id', user.id)
@@ -59,6 +48,7 @@ export async function PATCH(request: Request) {
     .single()
 
   if (error) {
+    console.error('[PATCH /api/volunteer/profile]', error.code, error.message, error.details)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
