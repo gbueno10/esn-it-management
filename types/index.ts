@@ -187,6 +187,7 @@ export interface Volunteer {
   birthdate: string | null
   nationality: string | null
   country: string | null
+  address: string | null
   contacts: Record<string, string>
   created_at: string
   updated_at: string

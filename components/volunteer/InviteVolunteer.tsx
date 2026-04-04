@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogClose, DialogDescription } from '@/components/ui/dialog'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from '@/components/ui/sheet'
 import { UserPlus, Copy, Check, Link as LinkIcon } from 'lucide-react'
 import { VolunteerStatus } from '@/types'
 
@@ -47,20 +47,22 @@ export function InviteVolunteer() {
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger render={
         <Button size="sm">
           <UserPlus className="h-3.5 w-3.5 mr-1" /> Invite
         </Button>
       } />
-      <DialogContent>
-        <DialogTitle className="text-lg font-semibold">Invite Volunteer</DialogTitle>
-        <DialogDescription className="text-[13px] text-muted-foreground mb-4">
-          Pre-fill membership details and share the signup link.
-        </DialogDescription>
+      <SheetContent>
+        <SheetHeader>
+          <SheetTitle>Invite Volunteer</SheetTitle>
+          <SheetDescription>
+            Pre-fill membership details and share the signup link.
+          </SheetDescription>
+        </SheetHeader>
 
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-5 px-4">
+          <div className="space-y-4">
             <div className="space-y-1.5">
               <Label className="text-[12px]">Status</Label>
               <select
@@ -85,32 +87,24 @@ export function InviteVolunteer() {
             </div>
           </div>
 
-          <div className="space-y-1.5 min-w-0">
+          <div className="space-y-1.5">
             <Label className="text-[12px] flex items-center gap-1">
               <LinkIcon className="h-3 w-3" /> Signup Link
             </Label>
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="flex-1 min-w-0 bg-muted rounded-md px-3 py-2 text-[12px] font-mono truncate select-all">
-                {inviteUrl}
-              </div>
-              <Button size="sm" variant="outline" onClick={handleCopy} className="flex-shrink-0">
-                {copied ? <Check className="h-3.5 w-3.5 mr-1 text-emerald-600" /> : <Copy className="h-3.5 w-3.5 mr-1" />}
-                {copied ? 'Copied' : 'Copy'}
-              </Button>
+            <div className="bg-muted rounded-md px-3 py-2 text-[12px] font-mono break-all select-all">
+              {inviteUrl}
             </div>
+            <Button size="sm" variant="outline" onClick={handleCopy} className="w-full mt-2">
+              {copied ? <Check className="h-3.5 w-3.5 mr-1 text-emerald-600" /> : <Copy className="h-3.5 w-3.5 mr-1" />}
+              {copied ? 'Copied!' : 'Copy Link'}
+            </Button>
           </div>
 
           <p className="text-[11px] text-muted-foreground">
             The volunteer will create their account with these fields pre-filled.
           </p>
         </div>
-
-        <div className="flex justify-end pt-2">
-          <DialogClose>
-            <Button variant="outline">Done</Button>
-          </DialogClose>
-        </div>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   )
 }

@@ -6,6 +6,29 @@ This document provides context for AI code assistants working on this repository
 
 This is a standalone app template using a shared self-hosted Supabase instance with PostgreSQL schema isolation.
 
+## Database Access (Self-hosted Supabase)
+
+The Supabase instance is self-hosted at `https://supa.esnporto.org` on a VPS.
+
+**Opening the tunnel:**
+```bash
+ssh -i ~/.ssh/id_rsa_n8n -f -N -L 8081:localhost:8081 root@72.60.95.145
+```
+
+When a tunnel is open, you can run SQL directly via the pg/query endpoint:
+
+```bash
+curl -s -X POST "https://supa.esnporto.org/pg/query" \
+  -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+  -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "YOUR SQL HERE"}'
+```
+
+- Tables for this project live in the `it_manager` schema (not `public`)
+- Use `it_manager.table_name` in raw SQL queries
+- The service role key is in `.env` as `SUPABASE_SERVICE_ROLE_KEY`
+
 ## ⚠️ Security First: Use API Routes
 
 **IMPORTANT: Always use `/app/api/` routes for sensitive operations.**

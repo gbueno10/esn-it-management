@@ -12,34 +12,33 @@ import { SearchableSelect } from '@/components/ui/searchable-select'
 import { Separator } from '@/components/ui/separator'
 import { PhoneInput } from 'react-international-phone'
 import 'react-international-phone/style.css'
-import { COUNTRIES, NATIONALITIES } from '@/lib/constants'
+import { COUNTRIES, NATIONALITIES, SOCIAL_PLATFORMS, getSocialUrl } from '@/lib/constants'
 import {
   Save, User, Mail, Calendar, Link as LinkIcon, Plus, X, Cake, Flag, Globe,
-  Loader2, Pencil, Phone, MapPin, GraduationCap, Camera,
-  MessageCircle, AtSign, Sparkles,
+  Loader2, Pencil, Phone, MapPin, GraduationCap, Camera, ExternalLink,
+  MessageCircle, AtSign, Sparkles, SendHorizonal, Home,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 
 // ── Constants ──────────────────────────────────────────────
 
-const statusConfig: Record<VolunteerStatus, { label: string; emoji: string; color: string; dot: string }> = {
-  new_member: { label: 'New Member', emoji: '🌱', color: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/60', dot: 'bg-emerald-500' },
-  member: { label: 'Member', emoji: '⭐', color: 'bg-amber-50 text-amber-700 ring-1 ring-amber-200/60', dot: 'bg-amber-500' },
-  board: { label: 'Board', emoji: '👑', color: 'bg-purple-50 text-purple-700 ring-1 ring-purple-200/60', dot: 'bg-purple-500' },
-  inactive_member: { label: 'Inactive', emoji: '😴', color: 'bg-slate-50 text-slate-500 ring-1 ring-slate-200/60', dot: 'bg-slate-400' },
-  alumni: { label: 'Alumni', emoji: '🎓', color: 'bg-blue-50 text-blue-700 ring-1 ring-blue-200/60', dot: 'bg-blue-500' },
-  parachute: { label: 'Parachute', emoji: '🪂', color: 'bg-sky-50 text-sky-700 ring-1 ring-sky-200/60', dot: 'bg-sky-500' },
+const statusConfig: Record<VolunteerStatus, { label: string; emoji: string; color: string; dot: string; bg: string }> = {
+  new_member: { label: 'New Member', emoji: '🌱', color: 'text-emerald-600', dot: 'bg-emerald-500', bg: 'bg-emerald-500' },
+  member: { label: 'Member', emoji: '⭐', color: 'text-amber-600', dot: 'bg-amber-500', bg: 'bg-amber-500' },
+  board: { label: 'Board', emoji: '👑', color: 'text-purple-600', dot: 'bg-purple-500', bg: 'bg-purple-500' },
+  inactive_member: { label: 'Inactive', emoji: '😴', color: 'text-slate-400', dot: 'bg-slate-400', bg: 'bg-slate-400' },
+  alumni: { label: 'Alumni', emoji: '🎓', color: 'text-blue-600', dot: 'bg-blue-500', bg: 'bg-blue-500' },
+  parachute: { label: 'Parachute', emoji: '🪂', color: 'text-sky-600', dot: 'bg-sky-500', bg: 'bg-sky-500' },
 }
 
 const socialIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   instagram: Camera,
   linkedin: Globe,
   whatsapp: MessageCircle,
+  telegram: SendHorizonal,
   email: Mail,
   phone: Phone,
-  twitter: AtSign,
-  x: AtSign,
 }
 
 function getSocialIcon(platform: string) {
@@ -106,6 +105,7 @@ export function VolunteerProfile({ volunteer, authEmail }: VolunteerProfileProps
     birthdate: volunteer.birthdate || null as string | null,
     nationality: volunteer.nationality || '',
     country: volunteer.country || 'Portugal',
+    address: volunteer.address || '',
     status: volunteer.status || ('new_member' as VolunteerStatus),
     join_semester: volunteer.join_semester || generateSemesters()[0],
     contacts: volunteer.contacts || {} as Record<string, string>,
@@ -167,6 +167,7 @@ export function VolunteerProfile({ volunteer, authEmail }: VolunteerProfileProps
         phone: form.phone || null,
         nationality: form.nationality || null,
         country: form.country || null,
+        address: form.address || null,
       }),
     })
     setSaving(false)
@@ -198,104 +199,114 @@ export function VolunteerProfile({ volunteer, authEmail }: VolunteerProfileProps
     const completionItems = [photoUrl, form.phone, form.birthdate, form.nationality, form.country, hasContacts]
     const completionPct = Math.round((completionItems.filter(Boolean).length / completionItems.length) * 100)
 
+    const details = [
+      form.phone && { icon: Phone, label: 'Phone', value: form.phone },
+      form.birthdate && { icon: Cake, label: 'Birthday', value: formatBirthdate(form.birthdate)! },
+      form.nationality && { icon: Flag, label: 'Nationality', value: form.nationality },
+      form.country && { icon: MapPin, label: 'Lives in', value: form.country },
+      form.address && { icon: Home, label: 'Address', value: form.address },
+    ].filter(Boolean) as { icon: React.ComponentType<{ className?: string }>; label: string; value: string }[]
+
     return (
-      <div className="max-w-xl mx-auto animate-fade-in-up space-y-4">
-        {/* Profile Card */}
-        <Card>
-          <CardContent className="pt-5">
-            {/* Header: avatar + name + edit */}
-            <div className="flex items-start gap-4 mb-4">
-              <label className="relative group cursor-pointer flex-shrink-0">
-                <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} disabled={uploadingPhoto} />
-                {photoUrl ? (
-                  <img src={photoUrl} alt={form.name || 'Avatar'} className="w-16 h-16 rounded-lg object-cover" />
-                ) : (
-                  <div className={cn(
-                    'w-16 h-16 rounded-lg bg-gradient-to-br flex items-center justify-center text-2xl font-semibold text-white',
-                    getAvatarGradient(form.name || 'V')
-                  )}>
-                    {form.name ? getInitials(form.name) : '?'}
-                  </div>
-                )}
-                <div className="absolute inset-0 rounded-lg bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center">
-                  {uploadingPhoto ? (
-                    <Loader2 className="h-4 w-4 text-white animate-spin" />
-                  ) : (
-                    <Camera className="h-4 w-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                  )}
-                </div>
-              </label>
-              <div className="flex-1 min-w-0 pt-0.5">
-                <h1 className="text-xl font-semibold tracking-tight truncate">{form.name || 'New Volunteer'}</h1>
-                <p className="text-[12px] text-muted-foreground mt-0.5">{authEmail}</p>
-                <div className="flex flex-wrap items-center gap-1.5 mt-2">
-                  <span className={cn('inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium', status.color)}>
-                    <span className={cn('w-1.5 h-1.5 rounded-full', status.dot)} />
-                    {status.label}
-                  </span>
-                  {form.join_semester && (
-                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium bg-muted text-muted-foreground">
-                      <GraduationCap className="h-3 w-3" /> {form.join_semester}
-                    </span>
-                  )}
-                </div>
+      <div className="max-w-lg mx-auto animate-fade-in-up">
+        {/* Profile header - Slack style */}
+        <div className="flex flex-col items-center text-center mb-8">
+          <label className="relative group cursor-pointer mb-4">
+            <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} disabled={uploadingPhoto} />
+            {photoUrl ? (
+              <img src={photoUrl} alt={form.name || 'Avatar'} className="w-20 h-20 rounded-full object-cover ring-4 ring-background shadow-lg" />
+            ) : (
+              <div className={cn(
+                'w-20 h-20 rounded-full bg-gradient-to-br flex items-center justify-center text-2xl font-bold text-white ring-4 ring-background shadow-lg',
+                getAvatarGradient(form.name || 'V')
+              )}>
+                {form.name ? getInitials(form.name) : '?'}
               </div>
-              <Button variant="outline" size="sm" onClick={() => setEditing(true)} className="flex-shrink-0 text-[12px]">
-                <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
-              </Button>
+            )}
+            <span className={cn('absolute bottom-0 right-0 w-5 h-5 rounded-full border-[3px] border-background', status.bg)} />
+            <div className="absolute inset-0 rounded-full bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center">
+              {uploadingPhoto ? (
+                <Loader2 className="h-4 w-4 text-white animate-spin" />
+              ) : (
+                <Camera className="h-4 w-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+              )}
             </div>
+          </label>
 
-            {/* Details */}
-            {hasDetails && (
+          <h1 className="text-xl font-bold tracking-tight">{form.name || 'New Volunteer'}</h1>
+          <p className="text-[12px] text-muted-foreground mt-0.5">{authEmail}</p>
+          <div className="flex items-center gap-2 mt-1.5">
+            <span className={cn('text-[12px] font-medium', status.color)}>{status.label}</span>
+            {form.join_semester && (
               <>
-                <Separator className="my-4" />
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-6">
-                  {form.phone && <DetailRow icon={Phone} label="Phone" value={form.phone} />}
-                  {form.birthdate && <DetailRow icon={Cake} label="Birthday" value={formatBirthdate(form.birthdate)!} />}
-                  {form.nationality && <DetailRow icon={Flag} label="Nationality" value={form.nationality} />}
-                  {form.country && <DetailRow icon={MapPin} label="Lives in" value={form.country} />}
-                </div>
+                <span className="text-border">·</span>
+                <span className="text-[12px] text-muted-foreground flex items-center gap-1">
+                  <GraduationCap className="h-3 w-3" /> {form.join_semester}
+                </span>
               </>
             )}
+          </div>
+          <Button variant="outline" size="sm" onClick={() => setEditing(true)} className="mt-4 text-[12px]">
+            <Pencil className="h-3.5 w-3.5 mr-1" /> Edit Profile
+          </Button>
+        </div>
 
-            {/* Social links */}
-            {hasContacts && (
-              <>
-                <Separator className="my-4" />
-                <p className="text-[11px] font-medium text-muted-foreground mb-2">Contacts</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {Object.entries(form.contacts).map(([platform, handle]) => {
-                    const Icon = getSocialIcon(platform)
-                    return (
-                      <span key={platform} className="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-[12px] hover:bg-muted transition-colors">
-                        <Icon className="h-3.5 w-3.5 text-muted-foreground" />
-                        <span className="font-medium capitalize">{platform}</span>
-                        <span className="text-muted-foreground hidden sm:inline">{handle}</span>
-                      </span>
-                    )
-                  })}
+        {/* Details section */}
+        {details.length > 0 && (
+          <div className="mb-6">
+            <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">About</h3>
+            <div className="border rounded-lg divide-y bg-card">
+              {details.map(({ icon: Icon, label, value }) => (
+                <div key={label} className="flex items-center gap-3 px-4 py-2.5">
+                  <Icon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <span className="text-[12px] text-muted-foreground w-20 flex-shrink-0">{label}</span>
+                  <span className="text-[13px] font-medium truncate">{value}</span>
                 </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Contacts section */}
+        {hasContacts && (
+          <div className="mb-6">
+            <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Contacts</h3>
+            <div className="border rounded-lg divide-y bg-card">
+              {Object.entries(form.contacts).map(([platform, handle]) => {
+                const Icon = getSocialIcon(platform)
+                const url = getSocialUrl(platform, handle)
+                return (
+                  <div key={platform} className="flex items-center gap-3 px-4 py-2.5">
+                    <Icon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    <span className="text-[12px] text-muted-foreground w-20 flex-shrink-0 capitalize">{platform}</span>
+                    {url ? (
+                      <a href={url} target="_blank" rel="noopener noreferrer" className="text-[13px] font-medium text-primary hover:underline flex items-center gap-1 truncate">
+                        {handle} <ExternalLink className="h-3 w-3 flex-shrink-0" />
+                      </a>
+                    ) : (
+                      <span className="text-[13px] font-medium truncate">{handle}</span>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Completion nudge */}
         {completionPct < 100 && (
-          <Card>
-            <CardContent className="flex items-center gap-3">
-              <Sparkles className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-medium">Complete your profile</p>
-                <div className="mt-2 h-1 rounded-full bg-muted overflow-hidden">
-                  <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${completionPct}%` }} />
-                </div>
+          <div className="border rounded-lg bg-card p-4 flex items-center gap-3">
+            <Sparkles className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-[13px] font-medium">Complete your profile</p>
+              <div className="mt-2 h-1 rounded-full bg-muted overflow-hidden">
+                <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${completionPct}%` }} />
               </div>
-              <Button size="sm" variant="outline" onClick={() => setEditing(true)} className="flex-shrink-0 text-[12px]">
-                Complete
-              </Button>
-            </CardContent>
-          </Card>
+            </div>
+            <Button size="sm" variant="outline" onClick={() => setEditing(true)} className="flex-shrink-0 text-[12px]">
+              Complete
+            </Button>
+          </div>
         )}
       </div>
     )
@@ -393,6 +404,11 @@ export function VolunteerProfile({ volunteer, authEmail }: VolunteerProfileProps
               <SearchableSelect value={form.country} onChange={(v) => setForm({ ...form, country: v })} options={COUNTRIES} placeholder="Select..." />
             </div>
           </div>
+          <div className="space-y-2">
+            <Label className="flex items-center gap-1.5"><Home className="h-3.5 w-3.5" /> Address</Label>
+            <Input placeholder="Your address (only visible to admins)" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
+            <p className="text-[11px] text-muted-foreground">Only admins can see your full address.</p>
+          </div>
         </CardContent>
       </Card>
 
@@ -461,8 +477,21 @@ export function VolunteerProfile({ volunteer, authEmail }: VolunteerProfileProps
             </div>
           )}
           <div className="flex gap-2">
-            <Input placeholder="Platform (e.g. instagram)" value={contactKey} onChange={(e) => setContactKey(e.target.value)} className="flex-1" />
-            <Input placeholder="Username or link" value={contactValue} onChange={(e) => setContactValue(e.target.value)} className="flex-1" />
+            <SearchableSelect
+              value={contactKey ? SOCIAL_PLATFORMS.find(p => p.key === contactKey)?.label || '' : ''}
+              onChange={(label) => {
+                const p = SOCIAL_PLATFORMS.find(s => s.label === label)
+                if (p) setContactKey(p.key)
+              }}
+              options={SOCIAL_PLATFORMS.filter(p => !form.contacts[p.key]).map(p => p.label)}
+              placeholder="Platform..."
+            />
+            <Input
+              placeholder={SOCIAL_PLATFORMS.find(p => p.key === contactKey)?.placeholder || 'Username or link'}
+              value={contactValue}
+              onChange={(e) => setContactValue(e.target.value)}
+              className="flex-1"
+            />
             <Button variant="outline" onClick={addContact} disabled={!contactKey || !contactValue}>
               <Plus className="h-4 w-4 mr-1" /> Add
             </Button>

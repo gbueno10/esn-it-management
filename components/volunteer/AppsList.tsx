@@ -2,10 +2,9 @@
 
 import { useState } from 'react'
 import { Project } from '@/types'
-import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { AccessLevelBadge, ProjectStatusBadge } from '@/components/ui/role-badges'
-import { CheckCircle, Lock, Globe, Clock, SendHorizonal, Loader2, ArrowUpRight } from 'lucide-react'
+import { ProjectStatusBadge } from '@/components/ui/role-badges'
+import { CheckCircle, Lock, Globe, Clock, ArrowUpRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import Link from 'next/link'
@@ -33,18 +32,30 @@ export function AppsList({ projects, userAccessSlugs, userAdminSlugs, pendingReq
     return { status: 'locked' as const, label: 'Locked', icon: Lock }
   }
 
-  async function handleRequest(slug: string) {
-    const res = await fetch('/api/volunteer/access-request', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ project_slug: slug, requested_role: 'user' }),
+  function requestAccess(project: Project) {
+    toast(`Request access to ${project.name}?`, {
+      action: {
+        label: 'Request',
+        onClick: async () => {
+          const res = await fetch('/api/volunteer/access-request', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ project_slug: project.slug, requested_role: 'user' }),
+          })
+          if (res.ok) {
+            setPendingSlugs(new Set([...pendingSlugs, project.slug]))
+            toast.success('Access requested!')
+          } else {
+            const { error } = await res.json().catch(() => ({ error: 'Failed' }))
+            toast.error(error)
+          }
+        },
+      },
     })
-    if (res.ok) { setPendingSlugs(new Set([...pendingSlugs, slug])); toast.success('Access requested!') }
-    else { const { error } = await res.json().catch(() => ({ error: 'Failed' })); toast.error(error) }
   }
 
-  const withAccess = projects.filter((p) => getAccessStatus(p).status === 'access')
-  const withoutAccess = projects.filter((p) => getAccessStatus(p).status !== 'access')
+  const withAccess = projects.filter((p) => getAccessStatus(p).status === 'access' && p.status !== 'development')
+  const withoutAccess = projects.filter((p) => getAccessStatus(p).status !== 'access' || p.status === 'development')
 
   return (
     <div className="space-y-10">
@@ -106,7 +117,7 @@ export function AppsList({ projects, userAccessSlugs, userAdminSlugs, pendingReq
               const isPending = access.status === 'pending'
               const canRequest = access.status === 'locked' && project.allow_access_requests
               return (
-                <LockedAppCard key={project.slug} project={project} access={access} isPending={isPending} canRequest={canRequest} onRequest={() => handleRequest(project.slug)} />
+                <LockedAppCard key={project.slug} project={project} access={access} isPending={isPending} canRequest={canRequest} onRequest={() => requestAccess(project)} />
               )
             })}
           </div>
@@ -117,46 +128,45 @@ export function AppsList({ projects, userAccessSlugs, userAdminSlugs, pendingReq
 }
 
 function LockedAppCard({ project, access, isPending, canRequest, onRequest }: {
-  project: Project; access: { label: string; icon: React.ComponentType<{ className?: string }> }; isPending: boolean; canRequest: boolean; onRequest: () => Promise<void>
+  project: Project; access: { label: string; icon: React.ComponentType<{ className?: string }> }; isPending: boolean; canRequest: boolean; onRequest: () => void
 }) {
-  const [loading, setLoading] = useState(false)
   const AccessIcon = access.icon
 
   return (
-    <Link href={`/projects/${project.slug}`}>
-      <Card className={cn('group p-4 transition-all', isPending ? 'opacity-70' : 'opacity-50 hover:opacity-75')}>
-        <div className="flex items-start gap-3.5">
-          <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted flex-shrink-0 grayscale">
-            {project.image_url ? (
-              <img src={project.image_url} alt={project.name} className="w-full h-full object-cover" />
-            ) : (
-              <div className={cn('w-full h-full bg-gradient-to-br flex items-center justify-center opacity-60', getProjectGradient(project.slug))}>
-                <span className="text-white/90 text-xl font-bold">{project.name[0]}</span>
-              </div>
-            )}
-          </div>
-          <div className="flex-1 min-w-0 pt-0.5">
-            <h4 className="text-[14px] font-semibold truncate">{project.name}</h4>
-            {project.description && (
-              <p className="text-[12px] text-muted-foreground mt-0.5 line-clamp-1 leading-relaxed">{project.description}</p>
-            )}
-            <div className="flex items-center gap-2 mt-2.5">
-              <span className={cn('inline-flex items-center gap-1 text-[10px] font-medium', isPending ? 'text-amber-600' : 'text-muted-foreground')}>
-                <AccessIcon className="h-3 w-3" /> {access.label}
-              </span>
-              {canRequest && (
-                <button
-                  onClick={async (e) => { e.preventDefault(); e.stopPropagation(); setLoading(true); await onRequest(); setLoading(false) }}
-                  disabled={loading}
-                  className="text-[10px] font-medium text-primary hover:underline disabled:opacity-50 ml-auto"
-                >
-                  {loading ? 'Requesting...' : 'Request Access'}
-                </button>
-              )}
+    <Card
+      className={cn('group p-4 transition-all', isPending ? 'opacity-70' : 'opacity-50 hover:opacity-75', canRequest && 'cursor-pointer')}
+      onClick={canRequest ? onRequest : undefined}
+    >
+      <div className="flex items-start gap-3.5">
+        <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted flex-shrink-0 grayscale">
+          {project.image_url ? (
+            <img src={project.image_url} alt={project.name} className="w-full h-full object-cover" />
+          ) : (
+            <div className={cn('w-full h-full bg-gradient-to-br flex items-center justify-center opacity-60', getProjectGradient(project.slug))}>
+              <span className="text-white/90 text-xl font-bold">{project.name[0]}</span>
             </div>
+          )}
+        </div>
+        <div className="flex-1 min-w-0 pt-0.5">
+          <h4 className="text-[14px] font-semibold truncate">{project.name}</h4>
+          {project.description && (
+            <p className="text-[12px] text-muted-foreground mt-0.5 line-clamp-1 leading-relaxed">{project.description}</p>
+          )}
+          <div className="flex items-center gap-2 mt-2.5">
+            <span className={cn('inline-flex items-center gap-1 text-[10px] font-medium', isPending ? 'text-amber-600' : 'text-muted-foreground')}>
+              <AccessIcon className="h-3 w-3" /> {access.label}
+            </span>
+            {canRequest && (
+              <span className="text-[10px] font-medium text-primary ml-auto">
+                Request Access
+              </span>
+            )}
+            {project.status === 'development' && (
+              <ProjectStatusBadge status="development" variant="inline" />
+            )}
           </div>
         </div>
-      </Card>
-    </Link>
+      </div>
+    </Card>
   )
 }

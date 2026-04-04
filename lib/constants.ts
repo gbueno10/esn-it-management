@@ -38,3 +38,25 @@ export const NATIONALITIES = [
   'Syrian', 'Taiwanese', 'Thai', 'Tunisian', 'Turkish', 'Ukrainian', 'Emirati',
   'Uruguayan', 'Uzbek', 'Venezuelan', 'Vietnamese',
 ]
+
+export interface SocialPlatform {
+  key: string
+  label: string
+  placeholder: string
+  urlTemplate: string | null // null = no link (e.g. phone)
+}
+
+export const SOCIAL_PLATFORMS: SocialPlatform[] = [
+  { key: 'instagram', label: 'Instagram', placeholder: 'username (without @)', urlTemplate: 'https://instagram.com/{value}' },
+  { key: 'linkedin', label: 'LinkedIn', placeholder: 'profile slug (e.g. john-doe)', urlTemplate: 'https://linkedin.com/in/{value}' },
+  { key: 'whatsapp', label: 'WhatsApp', placeholder: 'phone number with country code', urlTemplate: 'https://wa.me/{value}' },
+  { key: 'telegram', label: 'Telegram', placeholder: 'username (without @)', urlTemplate: 'https://t.me/{value}' },
+  { key: 'email', label: 'Email', placeholder: 'email address', urlTemplate: 'mailto:{value}' },
+  { key: 'phone', label: 'Phone', placeholder: 'phone number', urlTemplate: 'tel:{value}' },
+]
+
+export function getSocialUrl(platform: string, value: string): string | null {
+  const p = SOCIAL_PLATFORMS.find(s => s.key === platform)
+  if (!p?.urlTemplate) return null
+  return p.urlTemplate.replace('{value}', encodeURIComponent(value))
+}

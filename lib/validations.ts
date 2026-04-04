@@ -9,6 +9,7 @@ export const volunteerProfileSchema = z.object({
   birthdate: z.string().optional().nullable(),
   nationality: z.string().max(100).optional().nullable(),
   country: z.string().max(100).optional().nullable(),
+  address: z.string().max(200).optional().nullable(),
   contacts: z.record(z.string(), z.string()).optional(),
 }).strict()
 
