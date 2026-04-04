@@ -36,7 +36,7 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   // Define public routes that don't require authentication
-  const publicRoutes = ['/login', '/signup', '/auth', '/forgot-password', '/reset-password', '/api/volunteer/signup', '/volunteer/onboarding']
+  const publicRoutes = ['/login', '/signup', '/auth', '/forgot-password', '/reset-password', '/api/volunteer/signup', '/api/project-config', '/volunteer/onboarding', '/no-access']
   const isPublicRoute = publicRoutes.some(route =>
     request.nextUrl.pathname.startsWith(route)
   )
@@ -57,12 +57,9 @@ export async function updateSession(request: NextRequest) {
     })
 
     if (!hasAccess) {
-      // User doesn't have access to this project
-      // Sign them out and redirect to unauthorized page
-      await supabase.auth.signOut()
-
+      // User doesn't have access — redirect to no-access page (keep them logged in)
       const url = request.nextUrl.clone()
-      url.pathname = '/unauthorized'
+      url.pathname = '/no-access'
       return NextResponse.redirect(url)
     }
   }

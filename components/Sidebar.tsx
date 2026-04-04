@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { LayoutDashboard, FolderKanban, Users, Database, LogOut, Menu, X, Settings, User, AppWindow } from 'lucide-react'
+import { LayoutDashboard, FolderKanban, Users, Database, LogOut, Menu, X, Settings, User, AppWindow, UsersRound } from 'lucide-react'
 
 interface SidebarProps {
   userEmail: string
@@ -24,6 +24,7 @@ const adminNav = [
 const volunteerNav = [
   { href: '/volunteer/profile', label: 'My Profile', icon: User },
   { href: '/volunteer/apps', label: 'My Apps', icon: AppWindow },
+  { href: '/volunteer/people', label: 'People', icon: UsersRound },
 ]
 
 export function Sidebar({ userEmail, isAdmin, userRole }: SidebarProps) {

@@ -23,7 +23,7 @@ export async function GET() {
   return NextResponse.json({ data })
 }
 
-// PATCH /api/volunteer/profile - Update volunteer profile
+// PATCH /api/volunteer/profile - Update volunteer profile (upserts if row doesn't exist)
 export async function PATCH(request: Request) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -35,15 +35,18 @@ export async function PATCH(request: Request) {
   const body = await request.json()
 
   const allowed = ['name', 'phone', 'photo_url', 'status', 'join_semester', 'birthdate', 'nationality', 'country', 'contacts']
-  const updates: Record<string, unknown> = { updated_at: new Date().toISOString() }
+  const fields: Record<string, unknown> = {
+    id: user.id,
+    email: user.email,
+    updated_at: new Date().toISOString(),
+  }
   for (const key of allowed) {
-    if (body[key] !== undefined) updates[key] = body[key]
+    if (body[key] !== undefined) fields[key] = body[key]
   }
 
   const { data, error } = await supabase
     .from('volunteers')
-    .update(updates)
-    .eq('id', user.id)
+    .upsert(fields, { onConflict: 'id' })
     .select()
     .single()
 

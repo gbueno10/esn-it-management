@@ -63,8 +63,12 @@ export async function POST(request: Request) {
       slug: body.slug,
       name: body.name,
       description: body.description || null,
+      image_url: body.image_url || null,
+      app_url: body.app_url || null,
       access_level: body.access_level || 'staff_only',
       allow_signup: body.allow_signup ?? false,
+      allow_access_requests: body.allow_access_requests ?? false,
+      allow_admin_requests: body.allow_admin_requests ?? false,
     })
     .select()
     .single()

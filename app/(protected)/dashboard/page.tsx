@@ -2,7 +2,9 @@ import { createPublicClient } from '@/lib/supabase/server'
 import { isProjectAdmin } from '@/lib/auth/permissions'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { FolderKanban, Users, Shield, Database, Plus, ArrowRight } from 'lucide-react'
+import { AccessRequests } from '@/components/admin/AccessRequests'
+import { AccessRequestWithDetails } from '@/types'
+import { FolderKanban, Users, Shield, Database, Plus, ArrowRight, Inbox } from 'lucide-react'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
@@ -10,10 +12,11 @@ export default async function DashboardPage() {
   const supabase = await createPublicClient()
   const isAdmin = await isProjectAdmin()
 
-  // Redirect non-admins (volunteers) to their profile
   if (!isAdmin) {
     redirect('/volunteer/profile')
   }
+
+  const admin = createAdminClient()
 
   const [
     { count: totalProjects },
@@ -26,6 +29,42 @@ export default async function DashboardPage() {
     supabase.from('profiles').select('*', { count: 'exact', head: true }),
     supabase.from('profiles').select('*', { count: 'exact', head: true }).in('role', ['volunteer', 'admin']),
   ])
+
+  // Fetch pending access requests
+  const { data: pendingRequests } = await supabase
+    .from('access_requests')
+    .select('*, projects:project_slug(name)')
+    .eq('status', 'pending')
+    .order('created_at', { ascending: true })
+
+  // Enrich with user info
+  const userIds = [...new Set((pendingRequests || []).map(r => r.user_id))]
+  const { data: authUsers } = await admin.auth.admin.listUsers({ perPage: 1000 })
+  const emailMap: Record<string, string> = {}
+  for (const u of authUsers?.users || []) {
+    if (u.email) emailMap[u.id] = u.email
+  }
+
+  let volMap: Record<string, { name?: string; photo_url?: string }> = {}
+  if (userIds.length > 0) {
+    const { data: vols } = await admin
+      .from('it_manager.volunteers')
+      .select('id, name, photo_url')
+      .in('id', userIds)
+    for (const v of vols || []) {
+      volMap[v.id] = { name: v.name, photo_url: v.photo_url }
+    }
+  }
+
+  const enrichedRequests: AccessRequestWithDetails[] = (pendingRequests || []).map(r => ({
+    ...r,
+    user_email: emailMap[r.user_id] || undefined,
+    user_name: volMap[r.user_id]?.name || undefined,
+    user_photo: volMap[r.user_id]?.photo_url || undefined,
+    project_name: (r.projects as { name: string } | null)?.name || r.project_slug,
+  }))
+
+  const pendingCount = enrichedRequests.length
 
   const { data: recentProjects } = await supabase
     .from('projects')
@@ -43,7 +82,7 @@ export default async function DashboardPage() {
     { label: 'Total Projects', value: totalProjects || 0, icon: FolderKanban, href: '/projects', color: 'text-[var(--esn-blue)]' },
     { label: 'Active Projects', value: activeProjects || 0, icon: FolderKanban, href: '/projects', color: 'text-[var(--esn-green)]' },
     { label: 'Total Users', value: totalUsers || 0, icon: Users, href: '/users', color: 'text-[var(--esn-pink)]' },
-    { label: 'Staff Members', value: staffCount || 0, icon: Shield, href: '/users', color: 'text-[var(--esn-orange)]' },
+    { label: 'Pending Requests', value: pendingCount, icon: Inbox, href: '#access-requests', color: pendingCount > 0 ? 'text-amber-500' : 'text-muted-foreground' },
   ]
 
   return (
@@ -57,8 +96,10 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {stats.map((stat) => {
           const Icon = stat.icon
+          const isLink = stat.href.startsWith('/')
+          const Comp = isLink ? Link : 'a'
           return (
-            <Link key={stat.label} href={stat.href}>
+            <Comp key={stat.label} href={stat.href}>
               <Card className="hover:border-primary/30 transition-colors cursor-pointer">
                 <CardContent className="pt-5 pb-4">
                   <div className="flex items-center justify-between mb-2">
@@ -68,10 +109,24 @@ export default async function DashboardPage() {
                   <div className="text-sm text-muted-foreground mt-1">{stat.label}</div>
                 </CardContent>
               </Card>
-            </Link>
+            </Comp>
           )
         })}
       </div>
+
+      {/* Access Requests */}
+      {pendingCount > 0 && (
+        <div className="mb-8" id="access-requests">
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <Inbox className="h-5 w-5 text-amber-500" />
+            Access Requests
+            <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-semibold">
+              {pendingCount} pending
+            </span>
+          </h2>
+          <AccessRequests initialRequests={enrichedRequests} />
+        </div>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Recent Projects */}

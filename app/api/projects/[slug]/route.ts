@@ -28,8 +28,12 @@ export async function PATCH(
   const updates: Record<string, unknown> = {}
   if (body.name !== undefined) updates.name = body.name
   if (body.description !== undefined) updates.description = body.description
+  if (body.image_url !== undefined) updates.image_url = body.image_url
+  if (body.app_url !== undefined) updates.app_url = body.app_url
   if (body.access_level !== undefined) updates.access_level = body.access_level
   if (body.allow_signup !== undefined) updates.allow_signup = body.allow_signup
+  if (body.allow_access_requests !== undefined) updates.allow_access_requests = body.allow_access_requests
+  if (body.allow_admin_requests !== undefined) updates.allow_admin_requests = body.allow_admin_requests
   if (body.is_active !== undefined) updates.is_active = body.is_active
 
   if (Object.keys(updates).length === 0) {

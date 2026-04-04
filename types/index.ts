@@ -22,8 +22,12 @@ export interface Project {
   slug: string
   name: string
   description?: string
+  image_url?: string
+  app_url?: string
   access_level: 'public' | 'staff_only' | 'admin_only' | 'custom'
   allow_signup: boolean
+  allow_access_requests: boolean
+  allow_admin_requests: boolean
   is_active: boolean
   created_at: string
   updated_at: string
@@ -73,15 +77,23 @@ export interface CreateProjectInput {
   slug: string
   name: string
   description?: string
+  image_url?: string
+  app_url?: string
   access_level: ProjectAccessLevel
   allow_signup: boolean
+  allow_access_requests?: boolean
+  allow_admin_requests?: boolean
 }
 
 export interface UpdateProjectInput {
   name?: string
   description?: string
+  image_url?: string
+  app_url?: string
   access_level?: ProjectAccessLevel
   allow_signup?: boolean
+  allow_access_requests?: boolean
+  allow_admin_requests?: boolean
   is_active?: boolean
 }
 
@@ -105,6 +117,31 @@ export interface ColumnInfo {
   data_type: string
   is_nullable: string
   column_default: string | null
+}
+
+// =============================================================================
+// ACCESS REQUEST TYPES
+// =============================================================================
+
+export type AccessRequestStatus = 'pending' | 'approved' | 'rejected'
+
+export interface AccessRequest {
+  id: string
+  user_id: string
+  project_slug: string
+  requested_role: 'user' | 'admin'
+  status: AccessRequestStatus
+  message?: string
+  reviewed_by?: string
+  reviewed_at?: string
+  created_at: string
+}
+
+export interface AccessRequestWithDetails extends AccessRequest {
+  user_name?: string
+  user_email?: string
+  user_photo?: string
+  project_name?: string
 }
 
 // =============================================================================

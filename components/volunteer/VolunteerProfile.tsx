@@ -98,6 +98,8 @@ interface VolunteerProfileProps {
 
 export function VolunteerProfile({ volunteer, authEmail }: VolunteerProfileProps) {
   const [editing, setEditing] = useState(!volunteer.name)
+  const [photoUrl, setPhotoUrl] = useState<string | null>(volunteer.photo_url)
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const [form, setForm] = useState({
     name: volunteer.name || '',
     phone: volunteer.phone || '',
@@ -111,6 +113,43 @@ export function VolunteerProfile({ volunteer, authEmail }: VolunteerProfileProps
   const [saving, setSaving] = useState(false)
   const [contactKey, setContactKey] = useState('')
   const [contactValue, setContactValue] = useState('')
+
+  async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file')
+      return
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Image must be under 2MB')
+      return
+    }
+    setUploadingPhoto(true)
+    const formData = new FormData()
+    formData.append('file', file)
+    const res = await fetch('/api/volunteer/avatar', { method: 'POST', body: formData })
+    setUploadingPhoto(false)
+    if (res.ok) {
+      const { photo_url } = await res.json()
+      setPhotoUrl(photo_url + '?t=' + Date.now())
+      toast.success('Photo updated!')
+    } else {
+      const { error } = await res.json().catch(() => ({ error: 'Upload failed' }))
+      toast.error(error)
+    }
+    e.target.value = ''
+  }
+
+  async function handlePhotoRemove() {
+    setUploadingPhoto(true)
+    const res = await fetch('/api/volunteer/avatar', { method: 'DELETE' })
+    setUploadingPhoto(false)
+    if (res.ok) {
+      setPhotoUrl(null)
+      toast.success('Photo removed')
+    }
+  }
 
   const status = statusConfig[form.status] || statusConfig.new_member
 
@@ -156,7 +195,7 @@ export function VolunteerProfile({ volunteer, authEmail }: VolunteerProfileProps
   if (!editing) {
     const hasDetails = form.phone || form.birthdate || form.nationality || form.country
     const hasContacts = Object.keys(form.contacts).length > 0
-    const completionItems = [form.phone, form.birthdate, form.nationality, form.country, hasContacts]
+    const completionItems = [photoUrl, form.phone, form.birthdate, form.nationality, form.country, hasContacts]
     const completionPct = Math.round((completionItems.filter(Boolean).length / completionItems.length) * 100)
 
     return (
@@ -184,12 +223,30 @@ export function VolunteerProfile({ volunteer, authEmail }: VolunteerProfileProps
           <div className="px-5 sm:px-6 pb-6">
             {/* Avatar + Name */}
             <div className="flex flex-col sm:flex-row sm:items-end gap-4 -mt-12 sm:-mt-14 mb-1">
-              <div className={cn(
-                'w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-gradient-to-br shadow-xl border-[3px] border-card flex items-center justify-center text-3xl sm:text-4xl font-bold text-white flex-shrink-0',
-                getAvatarGradient(form.name || 'V')
-              )}>
-                {form.name ? getInitials(form.name) : '?'}
-              </div>
+              <label className="relative group cursor-pointer flex-shrink-0">
+                <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} disabled={uploadingPhoto} />
+                {photoUrl ? (
+                  <img
+                    src={photoUrl}
+                    alt={form.name || 'Avatar'}
+                    className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl shadow-xl border-[3px] border-card object-cover"
+                  />
+                ) : (
+                  <div className={cn(
+                    'w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-gradient-to-br shadow-xl border-[3px] border-card flex items-center justify-center text-3xl sm:text-4xl font-bold text-white',
+                    getAvatarGradient(form.name || 'V')
+                  )}>
+                    {form.name ? getInitials(form.name) : '?'}
+                  </div>
+                )}
+                <div className="absolute inset-0 rounded-2xl bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center">
+                  {uploadingPhoto ? (
+                    <Loader2 className="h-6 w-6 text-white animate-spin" />
+                  ) : (
+                    <Camera className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                  )}
+                </div>
+              </label>
               <div className="sm:pb-2 min-w-0">
                 <h1 className="text-2xl sm:text-3xl font-bold tracking-tight truncate">
                   {form.name || 'New Volunteer'}
@@ -302,12 +359,30 @@ export function VolunteerProfile({ volunteer, authEmail }: VolunteerProfileProps
     <div className="space-y-6 max-w-2xl animate-fade-in-up">
       {/* Header with avatar preview */}
       <div className="flex items-center gap-4">
-        <div className={cn(
-          'w-14 h-14 rounded-xl bg-gradient-to-br flex items-center justify-center text-lg font-bold text-white flex-shrink-0',
-          getAvatarGradient(form.name || 'V')
-        )}>
-          {form.name ? getInitials(form.name) : '?'}
-        </div>
+        <label className="relative group cursor-pointer flex-shrink-0">
+          <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} disabled={uploadingPhoto} />
+          {photoUrl ? (
+            <img
+              src={photoUrl}
+              alt={form.name || 'Avatar'}
+              className="w-14 h-14 rounded-xl object-cover"
+            />
+          ) : (
+            <div className={cn(
+              'w-14 h-14 rounded-xl bg-gradient-to-br flex items-center justify-center text-lg font-bold text-white',
+              getAvatarGradient(form.name || 'V')
+            )}>
+              {form.name ? getInitials(form.name) : '?'}
+            </div>
+          )}
+          <div className="absolute inset-0 rounded-xl bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center">
+            {uploadingPhoto ? (
+              <Loader2 className="h-4 w-4 text-white animate-spin" />
+            ) : (
+              <Camera className="h-4 w-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+            )}
+          </div>
+        </label>
         <div className="flex-1 min-w-0">
           <h1 className="text-xl font-bold tracking-tight">
             {form.name ? `Editing ${getFirstName(form.name)}'s profile` : 'Set up your profile'}

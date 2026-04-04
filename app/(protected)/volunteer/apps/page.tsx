@@ -27,14 +27,24 @@ export default async function VolunteerAppsPage() {
     .eq('is_active', true)
     .order('name')
 
-  // Get user's explicit project access
+  // Get user's explicit project access (with roles)
   const { data: access } = await admin
     .from('user_project_access')
-    .select('project_slug')
+    .select('project_slug, role')
     .eq('user_id', user.id)
     .is('revoked_at', null)
 
   const userAccessSlugs = new Set((access || []).map((a) => a.project_slug as string))
+  const userAdminSlugs = new Set((access || []).filter((a) => a.role === 'admin').map((a) => a.project_slug as string))
+
+  // Get user's pending access requests
+  const { data: pendingRequests } = await supabase
+    .from('access_requests')
+    .select('project_slug')
+    .eq('user_id', user.id)
+    .eq('status', 'pending')
+
+  const pendingRequestSlugs = new Set((pendingRequests || []).map((r) => r.project_slug as string))
 
   return (
     <div>
@@ -47,6 +57,8 @@ export default async function VolunteerAppsPage() {
       <AppsList
         projects={(projects || []) as Project[]}
         userAccessSlugs={userAccessSlugs}
+        userAdminSlugs={userAdminSlugs}
+        pendingRequestSlugs={pendingRequestSlugs}
         userRole={userRole}
       />
     </div>

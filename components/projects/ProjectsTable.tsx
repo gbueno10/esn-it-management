@@ -13,7 +13,7 @@ import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogClose, DialogD
 import { AccessLevelBadge } from '@/components/ui/role-badges'
 import { EmptyState } from '@/components/ui/empty-state'
 import { formatRelativeTime } from '@/lib/utils'
-import { Plus, Pencil, FolderKanban } from 'lucide-react'
+import { Plus, Pencil, FolderKanban, Image, ExternalLink } from 'lucide-react'
 
 interface ProjectsTableProps {
   initialProjects: Project[]
@@ -193,8 +193,12 @@ function ProjectFormDialog({
   const [slug, setSlug] = useState(initial?.slug || '')
   const [name, setName] = useState(initial?.name || '')
   const [description, setDescription] = useState(initial?.description || '')
+  const [imageUrl, setImageUrl] = useState(initial?.image_url || '')
+  const [appUrl, setAppUrl] = useState(initial?.app_url || '')
   const [accessLevel, setAccessLevel] = useState<string>(initial?.access_level || 'staff_only')
   const [allowSignup, setAllowSignup] = useState(initial?.allow_signup ?? false)
+  const [allowAccessRequests, setAllowAccessRequests] = useState(initial?.allow_access_requests ?? false)
+  const [allowAdminRequests, setAllowAdminRequests] = useState(initial?.allow_admin_requests ?? false)
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
@@ -204,8 +208,12 @@ function ProjectFormDialog({
       slug,
       name,
       description: description || undefined,
+      image_url: imageUrl || undefined,
+      app_url: appUrl || undefined,
       access_level: accessLevel as CreateProjectInput['access_level'],
       allow_signup: allowSignup,
+      allow_access_requests: allowAccessRequests,
+      allow_admin_requests: allowAdminRequests,
     })
     setLoading(false)
     if (success) setOpen(false)
@@ -235,15 +243,33 @@ function ProjectFormDialog({
               <Textarea id="desc" placeholder="Project description..." rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
             </div>
             <div className="space-y-1.5">
+              <Label htmlFor="image_url" className="flex items-center gap-1.5"><Image className="h-3.5 w-3.5" /> Cover Image URL</Label>
+              <Input id="image_url" placeholder="https://example.com/image.png" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="app_url" className="flex items-center gap-1.5"><ExternalLink className="h-3.5 w-3.5" /> App URL</Label>
+              <Input id="app_url" placeholder="https://myapp.esnporto.org" value={appUrl} onChange={(e) => setAppUrl(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
               <Label htmlFor="access">Access Level</Label>
               <select id="access" value={accessLevel} onChange={(e) => setAccessLevel(e.target.value)} className="w-full h-8 rounded-lg border px-2.5 text-sm bg-card">
                 {accessLevelOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
             </div>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={allowSignup} onChange={(e) => setAllowSignup(e.target.checked)} className="w-4 h-4 rounded border-input" />
-              <span className="text-sm">Allow signup</span>
-            </label>
+            <div className="space-y-2.5 pt-1">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={allowSignup} onChange={(e) => setAllowSignup(e.target.checked)} className="w-4 h-4 rounded border-input" />
+                <span className="text-sm">Allow signup</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={allowAccessRequests} onChange={(e) => setAllowAccessRequests(e.target.checked)} className="w-4 h-4 rounded border-input" />
+                <span className="text-sm">Allow access requests</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={allowAdminRequests} onChange={(e) => setAllowAdminRequests(e.target.checked)} className="w-4 h-4 rounded border-input" />
+                <span className="text-sm">Allow admin requests</span>
+              </label>
+            </div>
             <div className="flex justify-end gap-3 pt-2">
               <DialogClose>
                 <Button variant="outline" type="button">Cancel</Button>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, Suspense } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
@@ -10,8 +10,6 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Mail, Lock, ShieldCheck, Eye, EyeOff, Loader2, Zap, UserPlus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-const projectName = process.env.NEXT_PUBLIC_PROJECT_NAME || 'App'
-
 export default function LoginPage() {
   return (
     <Suspense>
@@ -20,10 +18,18 @@ export default function LoginPage() {
   )
 }
 
+interface ProjectConfig {
+  name: string
+  allow_signup: boolean
+  allow_access_requests: boolean
+  access_level: string
+}
+
 function LoginForm() {
   const searchParams = useSearchParams()
   const isVolunteerSignup = searchParams.get('role') === 'volunteer'
 
+  const [config, setConfig] = useState<ProjectConfig | null>(null)
   const [mode, setMode] = useState<'login' | 'signup'>(isVolunteerSignup ? 'signup' : 'login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -32,6 +38,24 @@ function LoginForm() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+
+  useEffect(() => {
+    fetch('/api/project-config')
+      .then(r => r.json())
+      .then((data: ProjectConfig) => {
+        setConfig(data)
+        // If signup not allowed and user is in signup mode, switch to login
+        if (!data.allow_signup && mode === 'signup' && !isVolunteerSignup) {
+          setMode('login')
+        }
+      })
+      .catch(() => {
+        setConfig({ name: 'App', allow_signup: false, allow_access_requests: false, access_level: 'staff_only' })
+      })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const projectName = config?.name || process.env.NEXT_PUBLIC_PROJECT_NAME || 'App'
+  const canSignup = config?.allow_signup ?? true // Default to true while loading
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -119,7 +143,7 @@ function LoginForm() {
   const subtitle = isVolunteerSignup && mode === 'signup'
     ? 'Create your ESN volunteer account'
     : mode === 'login'
-      ? 'Sign in to access your account'
+      ? `Sign in to ${projectName}`
       : 'Create an account to get started'
 
   return (
@@ -151,33 +175,35 @@ function LoginForm() {
         {/* Login card */}
         <Card className="shadow-xl shadow-slate-200/60 border-slate-200/80">
           <CardContent className="p-7">
-            {/* Mode toggle */}
-            <div className="flex bg-muted p-1 rounded-xl mb-6">
-              <button
-                type="button"
-                onClick={() => { setMode('login'); setError(null) }}
-                className={cn(
-                  'flex-1 py-2.5 text-sm font-medium rounded-lg transition-all duration-200',
-                  mode === 'login'
-                    ? 'bg-card text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                )}
-              >
-                Login
-              </button>
-              <button
-                type="button"
-                onClick={() => { setMode('signup'); setError(null) }}
-                className={cn(
-                  'flex-1 py-2.5 text-sm font-medium rounded-lg transition-all duration-200',
-                  mode === 'signup'
-                    ? 'bg-card text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                )}
-              >
-                Sign Up
-              </button>
-            </div>
+            {/* Mode toggle — only show if signup is allowed */}
+            {canSignup && (
+              <div className="flex bg-muted p-1 rounded-xl mb-6">
+                <button
+                  type="button"
+                  onClick={() => { setMode('login'); setError(null) }}
+                  className={cn(
+                    'flex-1 py-2.5 text-sm font-medium rounded-lg transition-all duration-200',
+                    mode === 'login'
+                      ? 'bg-card text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  Login
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setMode('signup'); setError(null) }}
+                  className={cn(
+                    'flex-1 py-2.5 text-sm font-medium rounded-lg transition-all duration-200',
+                    mode === 'signup'
+                      ? 'bg-card text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  Sign Up
+                </button>
+              </div>
+            )}
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
