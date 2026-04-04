@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
-import { LayoutDashboard, FolderKanban, Users, LogOut, Menu, X, User, AppWindow, UsersRound } from 'lucide-react'
+import { LayoutDashboard, FolderKanban, Users, LogOut, Menu, X, User, AppWindow, UsersRound, Building2, Shield } from 'lucide-react'
 
 interface SidebarProps {
   userEmail: string
@@ -18,10 +18,16 @@ const adminNav = [
   { href: '/users', label: 'Users', icon: Users },
 ]
 
+const organizationNav = [
+  { href: '/organization/members', label: 'Members', icon: UsersRound },
+  { href: '/organization/departments', label: 'Departments', icon: Building2 },
+  { href: '/organization/board', label: 'Statutory Bodies', icon: Shield },
+]
+
 const volunteerNav = [
   { href: '/volunteer/profile', label: 'My Profile', icon: User },
   { href: '/volunteer/apps', label: 'My Apps', icon: AppWindow },
-  { href: '/volunteer/people', label: 'People', icon: UsersRound },
+  { href: '/volunteer/people', label: 'People', icon: Users },
 ]
 
 export function Sidebar({ userEmail, isAdmin, userRole }: SidebarProps) {
@@ -84,6 +90,17 @@ export function Sidebar({ userEmail, isAdmin, userRole }: SidebarProps) {
               ))}
             </NavSection>
           )}
+
+          <NavSection label="ESN Porto">
+            {organizationNav.map((item) => (
+              <NavItem
+                key={item.href}
+                {...item}
+                active={pathname === item.href || pathname.startsWith(item.href + '/')}
+                onClick={() => setMobileOpen(false)}
+              />
+            ))}
+          </NavSection>
 
           <NavSection label={isAdmin ? 'Volunteer' : 'Menu'}>
             {volunteerNav.map((item) => (

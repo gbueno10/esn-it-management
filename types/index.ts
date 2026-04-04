@@ -175,6 +175,9 @@ export interface Tool {
 // =============================================================================
 
 export type VolunteerStatus = 'new_member' | 'member' | 'inactive_member' | 'board' | 'alumni' | 'parachute'
+export type MemberStatus = VolunteerStatus
+export type DepartmentRole = 'manager' | 'team_leader' | 'member'
+export type DepartmentType = 'department' | 'statutory_body'
 
 export interface Volunteer {
   id: string
@@ -191,4 +194,57 @@ export interface Volunteer {
   contacts: Record<string, string>
   created_at: string
   updated_at: string
+}
+
+// =============================================================================
+// ORGANIZATION TYPES
+// =============================================================================
+
+export interface Member {
+  id: string
+  name: string
+  email: string | null
+  status: MemberStatus
+  volunteer_id: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface Department {
+  id: string
+  name: string
+  type: DepartmentType
+  sort_order: number
+  created_at: string
+}
+
+export interface WorkingGroup {
+  id: string
+  department_id: string
+  name: string
+  sort_order: number
+  created_at: string
+}
+
+export interface DepartmentMembership {
+  id: string
+  member_id: string
+  department_id: string | null
+  working_group_id: string | null
+  role: DepartmentRole
+  position: string | null
+  created_at: string
+}
+
+export interface DepartmentWithDetails extends Department {
+  member_count: number
+  manager_name: string | null
+  working_groups: WorkingGroup[]
+}
+
+export interface MemberWithMemberships extends Member {
+  memberships: (DepartmentMembership & {
+    department?: Department
+    working_group?: WorkingGroup
+  })[]
 }
