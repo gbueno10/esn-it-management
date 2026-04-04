@@ -184,20 +184,20 @@ function AddAccessDialog({ onSubmit, projects, loading }: { onSubmit: (slug: str
       <DialogTrigger>
         <Button size="sm"><Plus className="h-4 w-4 mr-1" />Add access</Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent>
           <DialogTitle className="text-lg font-semibold mb-1">Add Project Access</DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground mb-4">Grant this user access to a project.</DialogDescription>
           <form onSubmit={(e) => { e.preventDefault(); if (selectedProject) { onSubmit(selectedProject, role); setOpen(false) } }} className="space-y-4">
             <div className="space-y-1.5">
               <Label>Project</Label>
-              <select value={selectedProject} onChange={(e) => setSelectedProject(e.target.value)} required className="w-full h-8 rounded-lg border px-2.5 text-sm bg-card">
+              <select value={selectedProject} onChange={(e) => setSelectedProject(e.target.value)} required className="w-full h-9 rounded-md border border-input px-2.5 text-[13px] bg-card outline-none hover:border-foreground/20">
                 <option value="" disabled>Select a project...</option>
                 {projects.map((p) => <option key={p.slug} value={p.slug}>{p.name} ({p.slug})</option>)}
               </select>
             </div>
             <div className="space-y-1.5">
               <Label>Project Role</Label>
-              <select value={role} onChange={(e) => setRole(e.target.value)} className="w-full h-8 rounded-lg border px-2.5 text-sm bg-card">
+              <select value={role} onChange={(e) => setRole(e.target.value)} className="w-full h-9 rounded-md border border-input px-2.5 text-[13px] bg-card outline-none hover:border-foreground/20">
                 <option value="user">User</option>
                 <option value="admin">Admin</option>
               </select>

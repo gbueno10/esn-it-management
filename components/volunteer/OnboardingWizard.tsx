@@ -53,9 +53,13 @@ const socialPlatforms = [
 interface OnboardingWizardProps {
   authEmail: string
   existingName?: string | null
+  prefill?: {
+    status?: VolunteerStatus
+    semester?: string
+  }
 }
 
-export function OnboardingWizard({ authEmail, existingName }: OnboardingWizardProps) {
+export function OnboardingWizard({ authEmail, existingName, prefill }: OnboardingWizardProps) {
   const router = useRouter()
   const [step, setStep] = useState(1)
   const [saving, setSaving] = useState(false)
@@ -65,8 +69,8 @@ export function OnboardingWizard({ authEmail, existingName }: OnboardingWizardPr
   const [birthdate, setBirthdate] = useState<string | null>(null)
   const [nationality, setNationality] = useState('')
   const [country, setCountry] = useState('Portugal')
-  const [status, setStatus] = useState<VolunteerStatus>('new_member')
-  const [joinSemester, setJoinSemester] = useState(generateSemesters()[0])
+  const [status, setStatus] = useState<VolunteerStatus>(prefill?.status || 'new_member')
+  const [joinSemester, setJoinSemester] = useState(prefill?.semester || generateSemesters()[0])
   const [contacts, setContacts] = useState<Record<string, string>>({})
   const [customKey, setCustomKey] = useState('')
   const [customVal, setCustomVal] = useState('')

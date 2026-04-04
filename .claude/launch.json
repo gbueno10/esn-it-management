@@ -6,7 +6,7 @@
       "runtimeExecutable": "/bin/sh",
       "runtimeArgs": ["scripts/dev.sh"],
       "port": 3000,
-      "autoPort": true
+      "autoPort": false
     }
   ]
 }

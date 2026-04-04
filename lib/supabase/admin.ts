@@ -20,6 +20,21 @@ export function createAdminClient() {
 }
 
 /**
+ * Create an admin client for the project schema (it_manager).
+ * Use for service_role operations on project-specific tables.
+ */
+export function createProjectAdminClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY!
+  const schema = process.env.NEXT_PUBLIC_SUPABASE_SCHEMA || 'public'
+
+  return createClient(url, key, {
+    db: { schema },
+    auth: { autoRefreshToken: false, persistSession: false },
+  })
+}
+
+/**
  * Get a map of user_id -> email from auth.users
  */
 export async function getAuthEmailMap(): Promise<Record<string, string>> {

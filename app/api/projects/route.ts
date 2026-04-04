@@ -1,6 +1,7 @@
 import { createPublicClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { isESNAdmin } from '@/lib/auth/permissions'
+import { projectCreateSchema, validateBody } from '@/lib/validations'
 
 // GET /api/projects - List all projects
 export async function GET() {
@@ -43,32 +44,30 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Forbidden - Admin only' }, { status: 403 })
   }
 
-  const body = await request.json()
-
-  if (!body.slug || !body.name) {
-    return NextResponse.json({ error: 'Slug and name are required' }, { status: 400 })
+  let body: unknown
+  try {
+    body = await request.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
 
-  // Validate slug format
-  if (!/^[a-z][a-z0-9_]*$/.test(body.slug)) {
-    return NextResponse.json(
-      { error: 'Slug must start with a letter and contain only lowercase letters, numbers, and underscores' },
-      { status: 400 }
-    )
+  const validated = validateBody(projectCreateSchema, body)
+  if ('error' in validated) {
+    return NextResponse.json({ error: validated.error }, { status: 400 })
   }
 
   const { data, error } = await supabase
     .from('projects')
     .insert({
-      slug: body.slug,
-      name: body.name,
-      description: body.description || null,
-      image_url: body.image_url || null,
-      app_url: body.app_url || null,
-      access_level: body.access_level || 'staff_only',
-      allow_signup: body.allow_signup ?? false,
-      allow_access_requests: body.allow_access_requests ?? false,
-      allow_admin_requests: body.allow_admin_requests ?? false,
+      slug: validated.data.slug,
+      name: validated.data.name,
+      description: validated.data.description ?? null,
+      image_url: validated.data.image_url ?? null,
+      app_url: validated.data.app_url ?? null,
+      access_level: validated.data.access_level,
+      allow_signup: validated.data.allow_signup,
+      allow_access_requests: validated.data.allow_access_requests,
+      allow_admin_requests: validated.data.allow_admin_requests,
     })
     .select()
     .single()

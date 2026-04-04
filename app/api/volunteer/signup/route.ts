@@ -19,7 +19,9 @@ export async function POST() {
   const admin = createAdminClient()
 
   // Upsert profile with volunteer role
-  // Only update role if current role is 'student' (don't downgrade admins)
+  // SECURITY: This endpoint can ONLY set role to 'volunteer'.
+  // It never grants admin. Admins are only set via /api/users/[id]/role by existing admins.
+  // It also never downgrades — if user is already admin/volunteer, role stays.
   const { data: existingProfile } = await admin
     .from('profiles')
     .select('role')
@@ -33,6 +35,7 @@ export async function POST() {
       email: user.email,
     })
   } else if (existingProfile.role === 'student') {
+    // Only upgrade students → volunteer. Never touch admin/volunteer roles.
     await admin.from('profiles').update({ role: 'volunteer' }).eq('id', user.id)
   }
 

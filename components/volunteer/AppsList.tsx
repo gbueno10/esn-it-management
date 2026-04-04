@@ -3,11 +3,13 @@
 import { useState } from 'react'
 import { Project } from '@/types'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { AccessLevelBadge } from '@/components/ui/role-badges'
-import { CheckCircle, Lock, Globe, ExternalLink, FolderKanban, Clock, SendHorizonal, Shield, Loader2 } from 'lucide-react'
+import { Card } from '@/components/ui/card'
+import { AccessLevelBadge, ProjectStatusBadge } from '@/components/ui/role-badges'
+import { CheckCircle, Lock, Globe, Clock, SendHorizonal, Loader2, ArrowUpRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import Link from 'next/link'
+import { getProjectGradient } from '@/components/projects/ProjectsGrid'
 
 interface AppsListProps {
   projects: Project[]
@@ -17,98 +19,96 @@ interface AppsListProps {
   userRole: string
 }
 
-function getProjectGradient(slug: string) {
-  const gradients = [
-    'from-[var(--esn-blue)] to-[var(--esn-pink)]',
-    'from-[var(--esn-green)] to-[var(--esn-blue)]',
-    'from-[var(--esn-orange)] to-[var(--esn-pink)]',
-    'from-[var(--esn-pink)] to-[var(--esn-dark)]',
-    'from-[var(--esn-blue)] to-[var(--esn-green)]',
-    'from-[var(--esn-dark)] to-[var(--esn-blue)]',
-  ]
-  let hash = 0
-  for (let i = 0; i < slug.length; i++) hash = slug.charCodeAt(i) + ((hash << 5) - hash)
-  return gradients[Math.abs(hash) % gradients.length]
-}
-
 export function AppsList({ projects, userAccessSlugs, userAdminSlugs, pendingRequestSlugs, userRole }: AppsListProps) {
   const [pendingSlugs, setPendingSlugs] = useState(pendingRequestSlugs)
 
   function getAccessStatus(project: Project) {
     if (userAccessSlugs.has(project.slug)) {
-      return { status: 'access', label: userAdminSlugs.has(project.slug) ? 'Admin' : 'You have access', icon: CheckCircle, color: 'text-green-600' }
+      return { status: 'access' as const, label: userAdminSlugs.has(project.slug) ? 'Admin' : 'Access', icon: CheckCircle }
     }
-    if (project.access_level === 'public') {
-      return { status: 'access', label: 'Public', icon: Globe, color: 'text-green-600' }
-    }
-    if (project.access_level === 'staff_only' && (userRole === 'volunteer' || userRole === 'admin')) {
-      return { status: 'access', label: 'Staff access', icon: CheckCircle, color: 'text-green-600' }
-    }
-    if (project.access_level === 'admin_only' && userRole === 'admin') {
-      return { status: 'access', label: 'Admin access', icon: CheckCircle, color: 'text-green-600' }
-    }
-    if (pendingSlugs.has(project.slug)) {
-      return { status: 'pending', label: 'Pending', icon: Clock, color: 'text-amber-600' }
-    }
-    return { status: 'locked', label: 'No access', icon: Lock, color: 'text-muted-foreground' }
+    if (project.access_level === 'public') return { status: 'access' as const, label: 'Public', icon: Globe }
+    if (project.access_level === 'staff_only' && (userRole === 'volunteer' || userRole === 'admin')) return { status: 'access' as const, label: 'Staff', icon: CheckCircle }
+    if (project.access_level === 'admin_only' && userRole === 'admin') return { status: 'access' as const, label: 'Admin', icon: CheckCircle }
+    if (pendingSlugs.has(project.slug)) return { status: 'pending' as const, label: 'Pending', icon: Clock }
+    return { status: 'locked' as const, label: 'Locked', icon: Lock }
   }
 
-  async function handleRequest(slug: string, requestedRole: 'user' | 'admin') {
+  async function handleRequest(slug: string) {
     const res = await fetch('/api/volunteer/access-request', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ project_slug: slug, requested_role: requestedRole }),
+      body: JSON.stringify({ project_slug: slug, requested_role: 'user' }),
     })
-    if (res.ok) {
-      setPendingSlugs(new Set([...pendingSlugs, slug]))
-      toast.success(requestedRole === 'admin' ? 'Admin access requested!' : 'Access requested! An admin will review it.')
-    } else {
-      const { error } = await res.json().catch(() => ({ error: 'Request failed' }))
-      toast.error(error)
-    }
+    if (res.ok) { setPendingSlugs(new Set([...pendingSlugs, slug])); toast.success('Access requested!') }
+    else { const { error } = await res.json().catch(() => ({ error: 'Failed' })); toast.error(error) }
   }
 
   const withAccess = projects.filter((p) => getAccessStatus(p).status === 'access')
   const withoutAccess = projects.filter((p) => getAccessStatus(p).status !== 'access')
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       {withAccess.length > 0 && (
         <div>
-          <h3 className="text-sm font-semibold text-muted-foreground mb-4">
+          <h3 className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wider mb-4">
             Your Apps ({withAccess.length})
           </h3>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {withAccess.map((project) => (
-              <ProjectCard
-                key={project.slug}
-                project={project}
-                access={getAccessStatus(project)}
-                isAdmin={userAdminSlugs.has(project.slug)}
-                hasPendingRequest={pendingSlugs.has(project.slug)}
-                onRequestAdmin={(slug) => handleRequest(slug, 'admin')}
-              />
-            ))}
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {withAccess.map((project) => {
+              const access = getAccessStatus(project)
+              return (
+                <Link key={project.slug} href={`/projects/${project.slug}`}>
+                  <Card className="hover-lift cursor-pointer group p-4">
+                    <div className="flex items-start gap-3.5">
+                      <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                        {project.image_url ? (
+                          <img src={project.image_url} alt={project.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className={cn('w-full h-full bg-gradient-to-br flex items-center justify-center', getProjectGradient(project.slug))}>
+                            <span className="text-white/90 text-xl font-bold">{project.name[0]}</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0 pt-0.5">
+                        <div className="flex items-center gap-1.5">
+                          <h4 className="text-[13px] font-semibold truncate">{project.name}</h4>
+                          <ArrowUpRight className="h-3 w-3 text-muted-foreground/0 group-hover:text-muted-foreground/40 transition-colors flex-shrink-0" />
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-1.5">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-emerald-50 text-emerald-700">
+                            <CheckCircle className="h-3 w-3" /> {access.label}
+                          </span>
+                          {project.status === 'development' && (
+                            <ProjectStatusBadge status="development" variant="inline" />
+                          )}
+                        </div>
+                        {project.description && (
+                          <p className="text-[12px] text-muted-foreground mt-2 line-clamp-2 leading-relaxed">{project.description}</p>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                </Link>
+              )
+            })}
           </div>
         </div>
       )}
 
       {withoutAccess.length > 0 && (
         <div>
-          <h3 className="text-sm font-semibold text-muted-foreground mb-4">
+          <h3 className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wider mb-4">
             Other Apps ({withoutAccess.length})
           </h3>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {withoutAccess.map((project) => (
-              <ProjectCard
-                key={project.slug}
-                project={project}
-                access={getAccessStatus(project)}
-                locked
-                hasPendingRequest={pendingSlugs.has(project.slug)}
-                onRequestAccess={(slug) => handleRequest(slug, 'user')}
-              />
-            ))}
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {withoutAccess.map((project) => {
+              const access = getAccessStatus(project)
+              const isPending = access.status === 'pending'
+              const canRequest = access.status === 'locked' && project.allow_access_requests
+              return (
+                <LockedAppCard key={project.slug} project={project} access={access} isPending={isPending} canRequest={canRequest} onRequest={() => handleRequest(project.slug)} />
+              )
+            })}
           </div>
         </div>
       )}
@@ -116,113 +116,47 @@ export function AppsList({ projects, userAccessSlugs, userAdminSlugs, pendingReq
   )
 }
 
-function ProjectCard({ project, access, locked, isAdmin, hasPendingRequest, onRequestAccess, onRequestAdmin }: {
-  project: Project
-  access: { status: string; label: string; icon: React.ComponentType<{ className?: string }>; color: string }
-  locked?: boolean
-  isAdmin?: boolean
-  hasPendingRequest?: boolean
-  onRequestAccess?: (slug: string) => Promise<void>
-  onRequestAdmin?: (slug: string) => Promise<void>
+function LockedAppCard({ project, access, isPending, canRequest, onRequest }: {
+  project: Project; access: { label: string; icon: React.ComponentType<{ className?: string }> }; isPending: boolean; canRequest: boolean; onRequest: () => Promise<void>
 }) {
-  const [requesting, setRequesting] = useState(false)
-  const Icon = access.icon
-  const hasImage = !!project.image_url
-  const isPending = access.status === 'pending' || (hasPendingRequest && !locked)
-  const canRequestAccess = locked && !isPending && onRequestAccess && project.allow_access_requests
-  const canRequestAdmin = !locked && !isAdmin && !hasPendingRequest && onRequestAdmin && project.allow_admin_requests
-  const Wrapper = project.app_url && !locked ? 'a' : 'div'
-  const wrapperProps = project.app_url && !locked
-    ? { href: project.app_url, target: '_blank', rel: 'noopener noreferrer' }
-    : {}
-
-  async function handleRequest(e: React.MouseEvent, fn: (slug: string) => Promise<void>) {
-    e.preventDefault()
-    e.stopPropagation()
-    if (requesting) return
-    setRequesting(true)
-    await fn(project.slug)
-    setRequesting(false)
-  }
+  const [loading, setLoading] = useState(false)
+  const AccessIcon = access.icon
 
   return (
-    <Wrapper {...wrapperProps}>
-      <Card className={cn(
-        'overflow-hidden transition-all group',
-        locked && !isPending ? 'opacity-50 hover:opacity-75' : locked ? 'opacity-70' : 'hover:border-primary/30 hover:shadow-md',
-        project.app_url && !locked && 'cursor-pointer'
-      )}>
-        <div className="h-28 relative overflow-hidden">
-          {hasImage ? (
-            <img
-              src={project.image_url}
-              alt={project.name}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            />
-          ) : (
-            <div className={cn('w-full h-full bg-gradient-to-br', getProjectGradient(project.slug))}>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <FolderKanban className="h-10 w-10 text-white/30" />
+    <Link href={`/projects/${project.slug}`}>
+      <Card className={cn('group p-4 transition-all', isPending ? 'opacity-70' : 'opacity-50 hover:opacity-75')}>
+        <div className="flex items-start gap-3.5">
+          <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted flex-shrink-0 grayscale">
+            {project.image_url ? (
+              <img src={project.image_url} alt={project.name} className="w-full h-full object-cover" />
+            ) : (
+              <div className={cn('w-full h-full bg-gradient-to-br flex items-center justify-center opacity-60', getProjectGradient(project.slug))}>
+                <span className="text-white/90 text-xl font-bold">{project.name[0]}</span>
               </div>
-            </div>
-          )}
-          <div className="absolute top-2 right-2">
-            <span className={cn(
-              'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold backdrop-blur-sm',
-              access.status === 'access'
-                ? isAdmin
-                  ? 'bg-purple-500/20 text-purple-100 border border-purple-400/30'
-                  : 'bg-green-500/20 text-green-100 border border-green-400/30'
-                : isPending
-                  ? 'bg-amber-500/20 text-amber-100 border border-amber-400/30'
-                  : 'bg-black/30 text-white/70 border border-white/20'
-            )}>
-              <Icon className="h-3 w-3" />
-              {access.label}
-            </span>
+            )}
           </div>
-        </div>
-
-        <CardContent className="pt-3 pb-4">
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0 flex-1">
-              <h4 className="font-semibold truncate">{project.name}</h4>
-              {project.description && (
-                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{project.description}</p>
+          <div className="flex-1 min-w-0 pt-0.5">
+            <h4 className="text-[14px] font-semibold truncate">{project.name}</h4>
+            {project.description && (
+              <p className="text-[12px] text-muted-foreground mt-0.5 line-clamp-1 leading-relaxed">{project.description}</p>
+            )}
+            <div className="flex items-center gap-2 mt-2.5">
+              <span className={cn('inline-flex items-center gap-1 text-[10px] font-medium', isPending ? 'text-amber-600' : 'text-muted-foreground')}>
+                <AccessIcon className="h-3 w-3" /> {access.label}
+              </span>
+              {canRequest && (
+                <button
+                  onClick={async (e) => { e.preventDefault(); e.stopPropagation(); setLoading(true); await onRequest(); setLoading(false) }}
+                  disabled={loading}
+                  className="text-[10px] font-medium text-primary hover:underline disabled:opacity-50 ml-auto"
+                >
+                  {loading ? 'Requesting...' : 'Request Access'}
+                </button>
               )}
             </div>
-            {project.app_url && !locked && (
-              <ExternalLink className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5 group-hover:text-primary transition-colors" />
-            )}
           </div>
-          <div className="flex items-center justify-between gap-2 mt-2.5">
-            <AccessLevelBadge level={project.access_level} />
-
-            {/* Locked project: request access */}
-            {canRequestAccess && (
-              <Button size="sm" variant="outline" onClick={(e) => handleRequest(e, onRequestAccess)} disabled={requesting} className="h-7 text-xs">
-                {requesting ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <SendHorizonal className="h-3 w-3 mr-1" />}
-                Request Access
-              </Button>
-            )}
-
-            {/* Has access but not admin: request admin */}
-            {canRequestAdmin && (
-              <Button size="sm" variant="outline" onClick={(e) => handleRequest(e, onRequestAdmin)} disabled={requesting} className="h-7 text-xs">
-                {requesting ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Shield className="h-3 w-3 mr-1" />}
-                Request Admin
-              </Button>
-            )}
-
-            {/* Pending request */}
-            {isPending && (
-              <span className="inline-flex items-center gap-1 text-xs text-amber-600 font-medium">
-                <Clock className="h-3 w-3" /> Pending review
-              </span>
-            )}
-          </div>
-        </CardContent>
+        </div>
       </Card>
-    </Wrapper>
+    </Link>
   )
 }

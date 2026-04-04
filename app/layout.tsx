@@ -9,10 +9,22 @@ const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 const inter = Inter({ subsets: ['latin'] })
 
 const projectName = process.env.NEXT_PUBLIC_PROJECT_NAME || 'My App'
+const appUrl = process.env.NEXT_PUBLIC_APP_URL || ''
 
 export const metadata: Metadata = {
-  title: projectName,
-  description: `${projectName} - Built with Next.js and Supabase`,
+  title: {
+    default: projectName,
+    template: `%s | ${projectName}`,
+  },
+  description: `${projectName} - ESN volunteer management platform`,
+  metadataBase: appUrl ? new URL(appUrl) : undefined,
+  robots: {
+    index: false,
+    follow: false,
+  },
+  icons: {
+    icon: '/favicon.ico',
+  },
 }
 
 export default function RootLayout({

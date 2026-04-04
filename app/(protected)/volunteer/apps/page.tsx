@@ -1,15 +1,19 @@
+import { createClient } from '@/lib/supabase/server'
 import { createPublicClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { AppsList } from '@/components/volunteer/AppsList'
-import { Project } from '@/types'
+import { isProjectAdmin } from '@/lib/auth/permissions'
+import { AppsAndTools } from '@/components/volunteer/AppsAndTools'
+import { Project, Tool } from '@/types'
 import { redirect } from 'next/navigation'
 
 export default async function VolunteerAppsPage() {
   const supabase = await createPublicClient()
+  const itManager = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
   const admin = createAdminClient()
+  const isAdmin = await isProjectAdmin()
 
   // Get user's ESN role
   const { data: profile } = await admin
@@ -24,7 +28,7 @@ export default async function VolunteerAppsPage() {
   const { data: projects } = await admin
     .from('projects')
     .select('*')
-    .eq('is_active', true)
+    .neq('status', 'inactive')
     .order('name')
 
   // Get user's explicit project access (with roles)
@@ -46,20 +50,28 @@ export default async function VolunteerAppsPage() {
 
   const pendingRequestSlugs = new Set((pendingRequests || []).map((r) => r.project_slug as string))
 
+  // Fetch tools
+  const { data: tools } = await itManager
+    .from('tools')
+    .select('*')
+    .order('name')
+
   return (
-    <div>
+    <div className="animate-fade-in-up">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold">My Apps</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          ESN apps and projects you have access to
+        <h1 className="text-2xl font-semibold tracking-tight">My Apps</h1>
+        <p className="text-[13px] text-muted-foreground mt-1">
+          Apps, tools and resources for ESN volunteers
         </p>
       </div>
-      <AppsList
+      <AppsAndTools
         projects={(projects || []) as Project[]}
         userAccessSlugs={userAccessSlugs}
         userAdminSlugs={userAdminSlugs}
         pendingRequestSlugs={pendingRequestSlugs}
         userRole={userRole}
+        tools={(tools || []) as Tool[]}
+        isAdmin={isAdmin}
       />
     </div>
   )

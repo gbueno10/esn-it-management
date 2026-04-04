@@ -39,7 +39,6 @@ export function SearchableSelect({ value, onChange, options, placeholder = 'Sele
     if (open && inputRef.current) inputRef.current.focus()
   }, [open])
 
-  // Scroll selected item into view
   useEffect(() => {
     if (open && listRef.current && value) {
       const selected = listRef.current.querySelector('[data-selected="true"]')
@@ -53,32 +52,32 @@ export function SearchableSelect({ value, onChange, options, placeholder = 'Sele
         type="button"
         onClick={() => setOpen(!open)}
         className={cn(
-          'flex h-10 w-full items-center justify-between rounded-lg border border-input bg-card px-3 text-sm text-left transition-all',
-          'hover:border-ring/40',
-          open && 'border-ring ring-3 ring-ring/20',
-          !value && 'text-muted-foreground/60'
+          'flex h-10 w-full items-center justify-between rounded-md border border-input bg-card px-3 text-[13px] text-left transition-colors',
+          'hover:bg-muted/50',
+          open && 'border-foreground/20',
+          !value && 'text-muted-foreground'
         )}
       >
         <span className="truncate">{value || placeholder}</span>
-        <ChevronDown className={cn('h-4 w-4 text-muted-foreground/60 transition-transform duration-200', open && 'rotate-180')} />
+        <ChevronDown className={cn('h-3.5 w-3.5 text-muted-foreground transition-transform duration-200', open && 'rotate-180')} />
       </button>
 
       {open && (
-        <div className="absolute z-50 mt-1.5 w-full rounded-xl border bg-popover shadow-xl shadow-black/8 overflow-hidden animate-in fade-in-0 zoom-in-95 duration-150">
-          <div className="flex items-center gap-2 border-b px-3 py-2.5">
-            <Search className="h-4 w-4 text-muted-foreground/60 flex-shrink-0" />
+        <div className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-md overflow-hidden animate-fade-in">
+          <div className="flex items-center gap-2 border-b px-3 py-2">
+            <Search className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
             <input
               ref={inputRef}
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search..."
-              className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/50"
+              className="flex-1 bg-transparent text-[13px] outline-none placeholder:text-muted-foreground/50"
             />
           </div>
           <div ref={listRef} className="max-h-52 overflow-y-auto py-1">
             {filtered.length === 0 ? (
-              <div className="px-3 py-4 text-sm text-muted-foreground text-center">No results found</div>
+              <div className="px-3 py-4 text-[13px] text-muted-foreground text-center">No results</div>
             ) : (
               filtered.map((option) => {
                 const isSelected = value === option
@@ -87,18 +86,18 @@ export function SearchableSelect({ value, onChange, options, placeholder = 'Sele
                     key={option}
                     type="button"
                     data-selected={isSelected}
-                    onClick={() => { onChange(option); setOpen(false); setSearch('') }}
+                    onClick={() => {
+                      onChange(option)
+                      setOpen(false)
+                      setSearch('')
+                    }}
                     className={cn(
-                      'flex w-full items-center gap-2.5 px-3 py-2 text-sm transition-colors text-left',
-                      isSelected
-                        ? 'bg-primary/8 text-primary font-medium'
-                        : 'hover:bg-muted/80 text-foreground'
+                      'flex w-full items-center gap-2 px-3 py-1.5 text-[13px] text-left transition-colors',
+                      isSelected ? 'bg-muted font-medium' : 'hover:bg-muted/50'
                     )}
                   >
-                    <span className={cn('flex-shrink-0 w-4', !isSelected && 'invisible')}>
-                      <Check className="h-3.5 w-3.5" />
-                    </span>
-                    <span className="truncate">{option}</span>
+                    <span className="flex-1 truncate">{option}</span>
+                    {isSelected && <Check className="h-3.5 w-3.5 text-foreground flex-shrink-0" />}
                   </button>
                 )
               })

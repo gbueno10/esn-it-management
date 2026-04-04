@@ -29,6 +29,7 @@ export interface Project {
   allow_access_requests: boolean
   allow_admin_requests: boolean
   is_active: boolean
+  status: ProjectStatus
   created_at: string
   updated_at: string
 }
@@ -72,6 +73,7 @@ export interface PageProps {
 export type ESNRole = 'student' | 'volunteer' | 'admin'
 export type ProjectAccessLevel = 'public' | 'staff_only' | 'admin_only' | 'custom'
 export type ProjectRole = 'user' | 'admin'
+export type ProjectStatus = 'active' | 'inactive' | 'development'
 
 export interface CreateProjectInput {
   slug: string
@@ -95,6 +97,7 @@ export interface UpdateProjectInput {
   allow_access_requests?: boolean
   allow_admin_requests?: boolean
   is_active?: boolean
+  status?: ProjectStatus
 }
 
 export interface UserWithAccess extends ESNProfile {
@@ -142,6 +145,29 @@ export interface AccessRequestWithDetails extends AccessRequest {
   user_email?: string
   user_photo?: string
   project_name?: string
+}
+
+// =============================================================================
+// VOLUNTEER TYPES
+// =============================================================================
+
+// =============================================================================
+// TOOL TYPES
+// =============================================================================
+
+export interface Tool {
+  id: string
+  name: string
+  description: string | null
+  url: string | null
+  icon_url: string | null
+  notes: string | null
+  requires_login: boolean
+  login_username: string | null
+  login_password: string | null
+  status: 'active' | 'inactive'
+  created_at: string
+  updated_at: string
 }
 
 // =============================================================================

@@ -23,13 +23,13 @@ import { cn } from '@/lib/utils'
 
 // ── Constants ──────────────────────────────────────────────
 
-const statusConfig: Record<VolunteerStatus, { label: string; emoji: string; color: string }> = {
-  new_member: { label: 'New Member', emoji: '🌱', color: 'bg-emerald-100 text-emerald-700' },
-  member: { label: 'Member', emoji: '⭐', color: 'bg-amber-100 text-amber-700' },
-  board: { label: 'Board', emoji: '👑', color: 'bg-purple-100 text-purple-700' },
-  inactive_member: { label: 'Inactive', emoji: '😴', color: 'bg-slate-100 text-slate-600' },
-  alumni: { label: 'Alumni', emoji: '🎓', color: 'bg-blue-100 text-blue-700' },
-  parachute: { label: 'Parachute', emoji: '🪂', color: 'bg-sky-100 text-sky-700' },
+const statusConfig: Record<VolunteerStatus, { label: string; emoji: string; color: string; dot: string }> = {
+  new_member: { label: 'New Member', emoji: '🌱', color: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/60', dot: 'bg-emerald-500' },
+  member: { label: 'Member', emoji: '⭐', color: 'bg-amber-50 text-amber-700 ring-1 ring-amber-200/60', dot: 'bg-amber-500' },
+  board: { label: 'Board', emoji: '👑', color: 'bg-purple-50 text-purple-700 ring-1 ring-purple-200/60', dot: 'bg-purple-500' },
+  inactive_member: { label: 'Inactive', emoji: '😴', color: 'bg-slate-50 text-slate-500 ring-1 ring-slate-200/60', dot: 'bg-slate-400' },
+  alumni: { label: 'Alumni', emoji: '🎓', color: 'bg-blue-50 text-blue-700 ring-1 ring-blue-200/60', dot: 'bg-blue-500' },
+  parachute: { label: 'Parachute', emoji: '🪂', color: 'bg-sky-50 text-sky-700 ring-1 ring-sky-200/60', dot: 'bg-sky-500' },
 }
 
 const socialIcons: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -199,152 +199,101 @@ export function VolunteerProfile({ volunteer, authEmail }: VolunteerProfileProps
     const completionPct = Math.round((completionItems.filter(Boolean).length / completionItems.length) * 100)
 
     return (
-      <div className="max-w-xl mx-auto animate-fade-in-up space-y-5">
-
-        {/* ── Hero card ── */}
-        <Card className="overflow-hidden border-0 shadow-lg shadow-black/[0.06] ring-1 ring-black/[0.06]">
-          {/* Banner */}
-          <div className="h-32 sm:h-36 gradient-primary relative overflow-hidden">
-            {/* Decorative circles */}
-            <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/10" />
-            <div className="absolute -bottom-6 -left-6 w-24 h-24 rounded-full bg-white/8" />
-            <div className="absolute top-4 left-1/3 w-16 h-16 rounded-full bg-white/5" />
-
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setEditing(true)}
-              className="absolute top-3 right-3 text-white/80 hover:text-white hover:bg-white/15 backdrop-blur-sm"
-            >
-              <Pencil className="h-3.5 w-3.5 mr-1.5" /> Edit Profile
-            </Button>
-          </div>
-
-          <div className="px-5 sm:px-6 pb-6">
-            {/* Avatar + Name */}
-            <div className="flex flex-col sm:flex-row sm:items-end gap-4 -mt-12 sm:-mt-14 mb-1">
+      <div className="max-w-xl mx-auto animate-fade-in-up space-y-4">
+        {/* Profile Card */}
+        <Card>
+          <CardContent className="pt-5">
+            {/* Header: avatar + name + edit */}
+            <div className="flex items-start gap-4 mb-4">
               <label className="relative group cursor-pointer flex-shrink-0">
                 <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} disabled={uploadingPhoto} />
                 {photoUrl ? (
-                  <img
-                    src={photoUrl}
-                    alt={form.name || 'Avatar'}
-                    className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl shadow-xl border-[3px] border-card object-cover"
-                  />
+                  <img src={photoUrl} alt={form.name || 'Avatar'} className="w-16 h-16 rounded-lg object-cover" />
                 ) : (
                   <div className={cn(
-                    'w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-gradient-to-br shadow-xl border-[3px] border-card flex items-center justify-center text-3xl sm:text-4xl font-bold text-white',
+                    'w-16 h-16 rounded-lg bg-gradient-to-br flex items-center justify-center text-2xl font-semibold text-white',
                     getAvatarGradient(form.name || 'V')
                   )}>
                     {form.name ? getInitials(form.name) : '?'}
                   </div>
                 )}
-                <div className="absolute inset-0 rounded-2xl bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center">
+                <div className="absolute inset-0 rounded-lg bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center">
                   {uploadingPhoto ? (
-                    <Loader2 className="h-6 w-6 text-white animate-spin" />
+                    <Loader2 className="h-4 w-4 text-white animate-spin" />
                   ) : (
-                    <Camera className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <Camera className="h-4 w-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                   )}
                 </div>
               </label>
-              <div className="sm:pb-2 min-w-0">
-                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight truncate">
-                  {form.name || 'New Volunteer'}
-                </h1>
-                <p className="text-sm text-muted-foreground mt-0.5">{authEmail}</p>
+              <div className="flex-1 min-w-0 pt-0.5">
+                <h1 className="text-xl font-semibold tracking-tight truncate">{form.name || 'New Volunteer'}</h1>
+                <p className="text-[12px] text-muted-foreground mt-0.5">{authEmail}</p>
+                <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                  <span className={cn('inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium', status.color)}>
+                    <span className={cn('w-1.5 h-1.5 rounded-full', status.dot)} />
+                    {status.label}
+                  </span>
+                  {form.join_semester && (
+                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium bg-muted text-muted-foreground">
+                      <GraduationCap className="h-3 w-3" /> {form.join_semester}
+                    </span>
+                  )}
+                </div>
               </div>
+              <Button variant="outline" size="sm" onClick={() => setEditing(true)} className="flex-shrink-0 text-[12px]">
+                <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
+              </Button>
             </div>
 
-            {/* Status + semester badges */}
-            <div className="flex flex-wrap items-center gap-2 mt-4">
-              <span className={cn('inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold', status.color)}>
-                <span>{status.emoji}</span> {status.label}
-              </span>
-              {form.join_semester && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-muted text-muted-foreground">
-                  <GraduationCap className="h-3.5 w-3.5" /> Since {form.join_semester}
-                </span>
-              )}
-            </div>
-
-            {/* ── Details section ── */}
+            {/* Details */}
             {hasDetails && (
               <>
-                <Separator className="my-5" />
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6">
-                  {form.phone && (
-                    <DetailRow icon={Phone} label="Phone" value={form.phone} />
-                  )}
-                  {form.birthdate && (
-                    <DetailRow icon={Cake} label="Birthday" value={formatBirthdate(form.birthdate)!} />
-                  )}
-                  {form.nationality && (
-                    <DetailRow icon={Flag} label="Nationality" value={form.nationality} />
-                  )}
-                  {form.country && (
-                    <DetailRow icon={MapPin} label="Lives in" value={form.country} />
-                  )}
+                <Separator className="my-4" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-6">
+                  {form.phone && <DetailRow icon={Phone} label="Phone" value={form.phone} />}
+                  {form.birthdate && <DetailRow icon={Cake} label="Birthday" value={formatBirthdate(form.birthdate)!} />}
+                  {form.nationality && <DetailRow icon={Flag} label="Nationality" value={form.nationality} />}
+                  {form.country && <DetailRow icon={MapPin} label="Lives in" value={form.country} />}
                 </div>
               </>
             )}
 
-            {/* ── Social links ── */}
+            {/* Social links */}
             {hasContacts && (
               <>
-                <Separator className="my-5" />
-                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                  Find me on
-                </p>
-                <div className="flex flex-wrap gap-2">
+                <Separator className="my-4" />
+                <p className="text-[11px] font-medium text-muted-foreground mb-2">Contacts</p>
+                <div className="flex flex-wrap gap-1.5">
                   {Object.entries(form.contacts).map(([platform, handle]) => {
                     const Icon = getSocialIcon(platform)
                     return (
-                      <button
-                        key={platform}
-                        className="group inline-flex items-center gap-2 rounded-xl border bg-card px-3.5 py-2 text-sm transition-all hover:border-primary/30 hover:bg-primary/5 hover:shadow-sm"
-                      >
-                        <Icon className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                      <span key={platform} className="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-[12px] hover:bg-muted transition-colors">
+                        <Icon className="h-3.5 w-3.5 text-muted-foreground" />
                         <span className="font-medium capitalize">{platform}</span>
-                        <span className="text-muted-foreground text-xs hidden sm:inline">{handle}</span>
-                      </button>
+                        <span className="text-muted-foreground hidden sm:inline">{handle}</span>
+                      </span>
                     )
                   })}
                 </div>
               </>
             )}
-          </div>
+          </CardContent>
         </Card>
 
-        {/* ── Completion nudge ── */}
+        {/* Completion nudge */}
         {completionPct < 100 && (
-          <Card className="border-dashed">
-            <CardContent className="py-5">
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Sparkles className="h-5 w-5 text-primary" />
+          <Card>
+            <CardContent className="flex items-center gap-3">
+              <Sparkles className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-[13px] font-medium">Complete your profile</p>
+                <div className="mt-2 h-1 rounded-full bg-muted overflow-hidden">
+                  <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${completionPct}%` }} />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold">
-                    Complete your profile
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {completionPct === 0
-                      ? 'Add some details so other volunteers can get to know you!'
-                      : `You're ${completionPct}% there. Add a few more details!`
-                    }
-                  </p>
-                  {/* Progress bar */}
-                  <div className="mt-3 h-1.5 rounded-full bg-muted overflow-hidden">
-                    <div
-                      className="h-full rounded-full gradient-primary transition-all duration-500"
-                      style={{ width: `${completionPct}%` }}
-                    />
-                  </div>
-                </div>
-                <Button size="sm" variant="outline" onClick={() => setEditing(true)} className="flex-shrink-0">
-                  Complete
-                </Button>
               </div>
+              <Button size="sm" variant="outline" onClick={() => setEditing(true)} className="flex-shrink-0 text-[12px]">
+                Complete
+              </Button>
             </CardContent>
           </Card>
         )}
@@ -499,7 +448,7 @@ export function VolunteerProfile({ volunteer, authEmail }: VolunteerProfileProps
               {Object.entries(form.contacts).map(([key, value]) => {
                 const Icon = getSocialIcon(key)
                 return (
-                  <div key={key} className="flex items-center gap-3 p-3 rounded-xl bg-muted/40 group transition-colors hover:bg-muted/60">
+                  <div key={key} className="flex items-center gap-3 p-3 rounded-lg bg-muted/40 group transition-colors hover:bg-muted/60">
                     <Icon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                     <span className="text-sm font-medium capitalize">{key}</span>
                     <span className="text-sm text-muted-foreground flex-1 truncate">{value}</span>
@@ -551,13 +500,11 @@ export function VolunteerProfile({ volunteer, authEmail }: VolunteerProfileProps
 
 function DetailRow({ icon: Icon, label, value }: { icon: React.ComponentType<{ className?: string }>; label: string; value: string }) {
   return (
-    <div className="flex items-center gap-3">
-      <div className="w-9 h-9 rounded-xl bg-muted/80 flex items-center justify-center flex-shrink-0">
-        <Icon className="h-4 w-4 text-muted-foreground" />
-      </div>
+    <div className="flex items-center gap-2.5">
+      <Icon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
       <div className="min-w-0">
-        <p className="text-[11px] font-medium text-muted-foreground/80 uppercase tracking-wider leading-none mb-0.5">{label}</p>
-        <p className="text-sm font-semibold truncate">{value}</p>
+        <p className="text-[11px] text-muted-foreground">{label}</p>
+        <p className="text-[13px] font-medium truncate">{value}</p>
       </div>
     </div>
   )

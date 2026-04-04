@@ -57,5 +57,14 @@ export async function GET(
     })
   }
 
-  return NextResponse.json({ data: Object.values(tables) })
+  // Fetch foreign key relations
+  const { data: relData } = await supabase.rpc('get_schema_relations', { schema_param: name })
+  const relations = (relData || []).map((r: { source_table: string; source_column: string; target_table: string; target_column: string }) => ({
+    source_table: r.source_table,
+    source_column: r.source_column,
+    target_table: r.target_table,
+    target_column: r.target_column,
+  }))
+
+  return NextResponse.json({ data: Object.values(tables), relations })
 }

@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { volunteerProfileSchema, validateBody } from '@/lib/validations'
 
 // GET /api/volunteer/profile - Get current volunteer's profile
 export async function GET() {
@@ -32,16 +33,23 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const body = await request.json()
+  let body: unknown
+  try {
+    body = await request.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+  }
 
-  const allowed = ['name', 'phone', 'photo_url', 'status', 'join_semester', 'birthdate', 'nationality', 'country', 'contacts']
+  const validated = validateBody(volunteerProfileSchema, body)
+  if ('error' in validated) {
+    return NextResponse.json({ error: validated.error }, { status: 400 })
+  }
+
   const fields: Record<string, unknown> = {
     id: user.id,
     email: user.email,
     updated_at: new Date().toISOString(),
-  }
-  for (const key of allowed) {
-    if (body[key] !== undefined) fields[key] = body[key]
+    ...validated.data,
   }
 
   const { data, error } = await supabase

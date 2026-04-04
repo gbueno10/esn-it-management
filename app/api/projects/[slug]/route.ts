@@ -35,6 +35,7 @@ export async function PATCH(
   if (body.allow_access_requests !== undefined) updates.allow_access_requests = body.allow_access_requests
   if (body.allow_admin_requests !== undefined) updates.allow_admin_requests = body.allow_admin_requests
   if (body.is_active !== undefined) updates.is_active = body.is_active
+  if (body.status !== undefined) updates.status = body.status
 
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: 'No fields to update' }, { status: 400 })
