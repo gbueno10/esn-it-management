@@ -1,68 +1,16 @@
-# ESN Porto App Template
+# ESN Porto IT Management
 
-A ready-to-use template for building web apps with user authentication and beautiful UI.
-
-## What's This?
-
-This template gives you a **fully working web app** out of the box:
-
-- Login & signup pages
-- User dashboard
-- Admin features
-- Modern, responsive design
-- Connected to our shared database
-
-Just customize it for your needs!
-
-## Quick Links
-
-| Guide | For whom | Description |
-|-------|----------|-------------|
-| [Getting Started](docs/GETTING_STARTED.md) | Everyone | Step-by-step setup guide |
-| [Concepts Explained](docs/CONCEPTS.md) | Beginners | What everything means |
-| [Creating Projects](docs/CREATING_NEW_PROJECT.md) | Developers | Technical setup guide |
-| [Architecture](docs/ARCHITECTURE.md) | Developers | How it all works |
-
-## 5-Minute Setup
-
-```bash
-# 1. Clone the template
-git clone https://github.com/ESN-Porto/app-template.git my-app
-cd my-app
-
-# 2. Install dependencies
-npm install
-
-# 3. Configure (copy .env.example to .env and fill in values)
-cp .env.example .env
-
-# 4. Run!
-npm run dev
-```
-
-Open http://localhost:3000 and you're ready to go!
+Internal platform for managing ESN Porto's app ecosystem, volunteers, access control, and project administration.
 
 ## Features
 
 | Feature | Description |
 |---------|-------------|
-| **Authentication** | Login, signup, password reset |
-| **Access Control** | Public, staff-only, or admin-only apps |
-| **Admin Dashboard** | Different UI for admins vs users |
-| **Modern Design** | Clean UI with gradients and animations |
-| **Database Ready** | Connected to Supabase |
-| **TypeScript** | Type-safe code |
-
-## Screenshots
-
-### Login Page
-Clean login with signup tabs, icons, and gradient buttons.
-
-### User Dashboard
-Welcome banner, quick actions, and user info.
-
-### Admin Dashboard
-Stats overview, admin actions, recent activity feed.
+| **Project Management** | Register, configure, and monitor all ESN apps |
+| **Volunteer Portal** | Profile management, photo upload, people directory |
+| **Access Control** | Role-based access with request/approve workflow |
+| **Smart Login** | Adapts to project config (signup toggle, no-access page) |
+| **Admin Dashboard** | Stats, pending requests, user management |
 
 ## Access Levels
 
@@ -73,42 +21,60 @@ Stats overview, admin actions, recent activity feed.
 | `admin_only` | Only ESN admins |
 | `custom` | Manually invited users |
 
+## Volunteer Features
+
+- **Profile** with photo upload, contacts, nationality, status
+- **People directory** to browse fellow volunteers
+- **My Apps** with project cards, external links, and access requests
+- **Request Access / Request Admin** per project (admin-configurable)
+
+## Project Configuration
+
+Each project can toggle:
+- `allow_signup` — show/hide signup on login page
+- `allow_access_requests` — let users request access
+- `allow_admin_requests` — let users request admin role
+- `image_url` / `app_url` — cover image and external link
+
 ## Tech Stack
 
-- **Framework**: Next.js 15 (React)
-- **Styling**: Tailwind CSS
-- **Database**: Supabase (PostgreSQL)
-- **Auth**: Supabase Auth
+- **Framework**: Next.js (React)
+- **Styling**: Tailwind CSS + shadcn/ui
+- **Database**: Supabase (PostgreSQL) with schema isolation
+- **Auth**: Supabase Auth (shared across all ESN apps)
 - **Language**: TypeScript
+
+## Setup
+
+```bash
+npm install
+cp .env.example .env  # Fill in Supabase credentials
+npm run dev
+```
 
 ## File Structure
 
 ```
 app/
-├── api/           → ⚠️ Server-side routes (secure operations)
-├── (auth)/        → Login & signup pages
-├── (protected)/   → Dashboard & app pages
+├── api/
+│   ├── admin/access-requests/  → Approve/reject access requests
+│   ├── project-config/         → Public project config (no auth)
+│   ├── projects/               → CRUD for projects
+│   └── volunteer/              → Profile, avatar, directory, access requests
+├── (auth)/                     → Login, no-access pages
+├── (protected)/
+│   ├── dashboard/              → Admin dashboard with stats & requests
+│   ├── projects/               → Project management table
+│   ├── users/                  → User management
+│   └── volunteer/              → Profile, apps, people directory
 lib/
-├── supabase/      → Database connection
-├── auth/          → Permission helpers
-docs/              → Documentation
+├── supabase/                   → Client, server, admin clients
+├── auth/                       → Permission helpers (RPC-based)
+components/
+├── admin/                      → AccessRequests table
+├── projects/                   → ProjectsTable with form dialog
+└── volunteer/                  → VolunteerProfile, AppsList, PeopleDirectory
 ```
-
-## Security: Use API Routes
-
-**Always use `/app/api/` for sensitive operations:**
-- Creating, updating, deleting data
-- Admin-only actions
-- Anything with secret keys
-
-See [app/api/README.md](app/api/README.md) for examples.
-
-## Need Help?
-
-1. Check the [Getting Started Guide](docs/GETTING_STARTED.md)
-2. Read the [Concepts Explained](docs/CONCEPTS.md)
-3. Ask in the ESN Porto tech channel
-4. Use Claude AI - it knows this codebase!
 
 ## License
 
