@@ -78,7 +78,7 @@ export async function POST(
       user_id: id,
       project_slug: body.project_slug,
       role: body.role || 'user',
-      granted_by: user.email,
+      granted_by: user.id,
     })
     .select()
     .single()
