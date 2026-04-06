@@ -31,19 +31,6 @@ export function DatePicker({ value, onChange, placeholder = 'Pick a date', maxDa
 
   return (
     <div className={cn('relative', className)}>
-      {/* Hidden native date input */}
-      <input
-        ref={inputRef}
-        type="date"
-        value={value || ''}
-        onChange={(e) => onChange(e.target.value || null)}
-        max={maxDate ? maxDate.toISOString().split('T')[0] : undefined}
-        min={minDate ? minDate.toISOString().split('T')[0] : undefined}
-        className="sr-only"
-        tabIndex={-1}
-        aria-hidden="true"
-      />
-
       {/* Visual trigger */}
       <button
         type="button"
@@ -60,7 +47,7 @@ export function DatePicker({ value, onChange, placeholder = 'Pick a date', maxDa
             <span
               role="button"
               onClick={(e) => { e.stopPropagation(); onChange(null) }}
-              className="p-0.5 rounded hover:bg-muted transition-colors"
+              className="relative z-10 p-0.5 rounded hover:bg-muted transition-colors"
             >
               <X className="h-3.5 w-3.5 text-muted-foreground" />
             </span>
@@ -68,6 +55,18 @@ export function DatePicker({ value, onChange, placeholder = 'Pick a date', maxDa
           <CalendarIcon className="h-4 w-4 text-muted-foreground/60" />
         </div>
       </button>
+
+      {/* Native date input overlaid for mobile tap support */}
+      <input
+        ref={inputRef}
+        type="date"
+        value={value || ''}
+        onChange={(e) => onChange(e.target.value || null)}
+        max={maxDate ? maxDate.toISOString().split('T')[0] : undefined}
+        min={minDate ? minDate.toISOString().split('T')[0] : undefined}
+        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+        tabIndex={-1}
+      />
     </div>
   )
 }
