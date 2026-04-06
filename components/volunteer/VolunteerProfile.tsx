@@ -30,6 +30,8 @@ const statusConfig: Record<VolunteerStatus, { label: string; emoji: string; colo
   inactive_member: { label: 'Inactive', emoji: '😴', color: 'text-slate-400', dot: 'bg-slate-400', bg: 'bg-slate-400' },
   alumni: { label: 'Alumni', emoji: '🎓', color: 'text-blue-600', dot: 'bg-blue-500', bg: 'bg-blue-500' },
   parachute: { label: 'Parachute', emoji: '🪂', color: 'text-sky-600', dot: 'bg-sky-500', bg: 'bg-sky-500' },
+  external: { label: 'External', emoji: '🌍', color: 'text-orange-600', dot: 'bg-orange-500', bg: 'bg-orange-500' },
+  intern: { label: 'Intern', emoji: '📋', color: 'text-teal-600', dot: 'bg-teal-500', bg: 'bg-teal-500' },
 }
 
 const socialIcons: Record<string, React.ComponentType<{ className?: string }>> = {

@@ -29,6 +29,8 @@ const statusConfig: Record<VolunteerStatus, { label: string; color: string; bg: 
   inactive_member: { label: 'Inactive', color: 'text-slate-400', bg: 'bg-slate-400' },
   alumni: { label: 'Alumni', color: 'text-blue-600', bg: 'bg-blue-500' },
   parachute: { label: 'Parachute', color: 'text-sky-600', bg: 'bg-sky-500' },
+  external: { label: 'External', color: 'text-orange-600', bg: 'bg-orange-500' },
+  intern: { label: 'Intern', color: 'text-teal-600', bg: 'bg-teal-500' },
 }
 
 const socialIcons: Record<string, React.ComponentType<{ className?: string }>> = {
