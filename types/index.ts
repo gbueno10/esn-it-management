@@ -174,7 +174,7 @@ export interface Tool {
 // VOLUNTEER TYPES
 // =============================================================================
 
-export type VolunteerStatus = 'new_member' | 'member' | 'inactive_member' | 'board' | 'alumni' | 'parachute'
+export type VolunteerStatus = 'new_member' | 'member' | 'inactive_member' | 'board' | 'alumni' | 'parachute' | 'external' | 'intern'
 export type MemberStatus = VolunteerStatus
 export type DepartmentRole = 'manager' | 'team_leader' | 'member'
 export type DepartmentType = 'department' | 'statutory_body'

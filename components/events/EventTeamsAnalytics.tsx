@@ -17,8 +17,10 @@ import { Badge } from '@/components/ui/badge'
 interface VolunteerEvent {
   sheet: string
   event_type: string
+  event_name: string
   event_description: string
   role: string
+  event_date: string | null
 }
 
 interface VolunteerEntry {
@@ -38,11 +40,20 @@ interface VolunteerEntry {
 interface EventEntry {
   sheet: string
   event_type: string
+  event_name: string
   event_description: string
+  event_date: string | null
   team_size: number
   mos: string[]
   team_members: string[]
   team: string[]
+}
+
+function formatDate(d: string | null): string {
+  if (!d) return '—'
+  const [y, m, day] = d.split('-').map(Number)
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+  return `${day} ${months[m - 1]} ${y}`
 }
 
 type Tab = 'volunteers' | 'events'
@@ -212,16 +223,16 @@ function VolunteerTab({
           <table className="w-full">
             <thead>
               <tr className="bg-muted/50 border-b">
-                <th className="px-3 py-2.5 text-left text-[11px] font-semibold text-muted-foreground">Month</th>
+                <th className="px-3 py-2.5 text-left text-[11px] font-semibold text-muted-foreground">Date</th>
                 <th className="px-3 py-2.5 text-left text-[11px] font-semibold text-muted-foreground">Type</th>
                 <th className="px-3 py-2.5 text-left text-[11px] font-semibold text-muted-foreground">Event</th>
                 <th className="px-3 py-2.5 text-center text-[11px] font-semibold text-muted-foreground">Role</th>
               </tr>
             </thead>
             <tbody>
-              {selected.events.map((ev, i) => (
+              {[...selected.events].sort((a, b) => (a.event_date ?? '').localeCompare(b.event_date ?? '')).map((ev, i) => (
                 <tr key={i} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
-                  <td className="px-3 py-2 text-[12px] text-muted-foreground whitespace-nowrap">{ev.sheet}</td>
+                  <td className="px-3 py-2 text-[12px] text-muted-foreground whitespace-nowrap">{formatDate(ev.event_date)}</td>
                   <td className="px-3 py-2">
                     <Badge variant="secondary" className="text-[10px]">{ev.event_type}</Badge>
                   </td>
@@ -230,7 +241,7 @@ function VolunteerTab({
                       onClick={() => onNavigateToEvent(`${ev.sheet}|${ev.event_description}`)}
                       className="text-[12px] text-left hover:underline"
                     >
-                      {ev.event_description}
+                      {ev.event_name || ev.event_description}
                     </button>
                   </td>
                   <td className="px-3 py-2 text-center">
@@ -375,11 +386,15 @@ function EventsTab({
     let result = [...events]
     if (search) {
       const q = search.toLowerCase()
-      result = result.filter((e) => e.event_description.toLowerCase().includes(q))
+      result = result.filter((e) =>
+        (e.event_name || e.event_description).toLowerCase().includes(q) ||
+        e.event_type.toLowerCase().includes(q)
+      )
     }
     if (filterSheet !== 'all') {
       result = result.filter((e) => e.sheet === filterSheet)
     }
+    result.sort((a, b) => (a.event_date ?? 'zzzz').localeCompare(b.event_date ?? 'zzzz'))
     return result
   }, [events, search, filterSheet])
 
@@ -399,10 +414,10 @@ function EventsTab({
         </button>
 
         <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-1">{selected.event_description}</h3>
-          <div className="flex gap-3 text-[12px] text-muted-foreground">
+          <h3 className="text-lg font-semibold mb-1">{selected.event_name || selected.event_description}</h3>
+          <div className="flex gap-3 text-[12px] text-muted-foreground items-center">
             <Badge variant="secondary" className="text-[10px]">{selected.event_type}</Badge>
-            <span>{selected.sheet}</span>
+            <span>{formatDate(selected.event_date)}</span>
             <span><strong className="text-foreground">{selected.team_size}</strong> people</span>
           </div>
         </div>
@@ -490,7 +505,7 @@ function EventsTab({
           <table className="w-full">
             <thead>
               <tr className="bg-muted/50 border-b">
-                <th className="px-3 py-2.5 text-left text-[11px] font-semibold text-muted-foreground">Month</th>
+                <th className="px-3 py-2.5 text-left text-[11px] font-semibold text-muted-foreground">Date</th>
                 <th className="px-3 py-2.5 text-left text-[11px] font-semibold text-muted-foreground">Type</th>
                 <th className="px-3 py-2.5 text-left text-[11px] font-semibold text-muted-foreground">Event</th>
                 <th className="px-3 py-2.5 text-center text-[11px] font-semibold text-muted-foreground">MOs</th>
@@ -507,11 +522,11 @@ function EventsTab({
                     className="border-b last:border-0 hover:bg-muted/30 transition-colors cursor-pointer"
                     onClick={() => onSelectEvent(key)}
                   >
-                    <td className="px-3 py-2 text-[12px] text-muted-foreground whitespace-nowrap">{ev.sheet}</td>
+                    <td className="px-3 py-2 text-[12px] text-muted-foreground whitespace-nowrap">{formatDate(ev.event_date)}</td>
                     <td className="px-3 py-2">
                       <Badge variant="secondary" className="text-[10px]">{ev.event_type}</Badge>
                     </td>
-                    <td className="px-3 py-2 text-[12px]">{ev.event_description}</td>
+                    <td className="px-3 py-2 text-[12px]">{ev.event_name || ev.event_description}</td>
                     <td className="px-3 py-2 text-center text-[12px] text-amber-600 font-medium">{ev.mos.length}</td>
                     <td className="px-3 py-2 text-center text-[12px]">{ev.team_members.length}</td>
                     <td className="px-3 py-2 text-center text-[12px] font-semibold">{ev.team_size}</td>

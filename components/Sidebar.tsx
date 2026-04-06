@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
-import { LayoutDashboard, FolderKanban, Users, LogOut, Menu, X, User, AppWindow, UsersRound, Building2, Shield } from 'lucide-react'
+import { LayoutDashboard, FolderKanban, Users, LogOut, Menu, X, User, AppWindow, UsersRound, Building2, Shield, CalendarDays } from 'lucide-react'
 
 interface SidebarProps {
   userEmail: string
@@ -22,6 +22,7 @@ const organizationNav = [
   { href: '/organization/members', label: 'Members', icon: UsersRound },
   { href: '/organization/departments', label: 'Departments', icon: Building2 },
   { href: '/organization/board', label: 'Statutory Bodies', icon: Shield },
+  { href: '/events/analytics', label: 'Events', icon: CalendarDays },
 ]
 
 const volunteerNav = [
